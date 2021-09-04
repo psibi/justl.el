@@ -99,7 +99,7 @@ CMD is the command string to run."
   (interactive)
   (let* ((recipies (completing-read "Recipies: " (just--get-recipies)
                                      nil nil nil nil "default")))
-    (just--exec-to-string (format "just %s" ))
+    (just--exec-to-string (format "just %s" recipies))
     ))
 
 ;; mode map

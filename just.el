@@ -76,7 +76,7 @@ READONLY If true buffer will be in readonly mode(view-mode)."
                   :file-handler t
                   :stderr error-buffer
                   :command cmd)
-    (pop-to-buffer buffer-name)
+    (pop-to-buffer buffer-name '(display-buffer-below-selected . ()))
     (if readonly
         (with-current-buffer buffer-name
           (view-mode)))))

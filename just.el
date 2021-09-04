@@ -91,7 +91,7 @@ CMD is the command string to run."
 (defun just--get-recipies ()
   "Get all the recipies"
   (let ((recipies (split-string (just--exec-to-string
-                                 (format "just --summary" kubel-context)) " ")))
+                                 (format "just --summary")) " ")))
     recipies))
 
 (defun just-exec-recipie ()
@@ -99,7 +99,7 @@ CMD is the command string to run."
   (interactive)
   (let* ((recipies (completing-read "Recipies: " (just--get-recipies)
                                      nil nil nil nil "default")))
-    (just--exec-to-string (format "just %s" recipies))
+    (just--exec "just" (list recipies))
     ))
 
 ;; mode map

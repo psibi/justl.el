@@ -1,0 +1,8 @@
+default:
+    just --list
+
+build-cmd version='0.4':
+    echo {{version}}
+
+push version: (build-cmd version)
+    build-cmd {{version}}

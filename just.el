@@ -91,8 +91,8 @@ CMD is the command string to run."
 (defun just--get-recipies ()
   "Get all the recipies"
   (let ((recipies (split-string (just--exec-to-string
-                                 (format "just --summary")) " ")))
-    recipies))
+                                 (format "just --summary --unsorted")) " ")))
+    (map 'list 'string-trim-right recipies)))
 
 (defun just-exec-recipie ()
   "Set the namespace."
@@ -123,3 +123,24 @@ CMD is the command string to run."
 ;; (defun just-list-entries (path)
 ;;   (just-executable)
 ;;   )
+
+;;;###autoload
+(defun justl ()
+  "Invoke the justl buffer."
+  (interactive)
+  (justl-mode))
+
+(define-derived-mode justl-mode fundamental-mode  "Justl"
+  "Special mode for justl buffers."
+  (buffer-disable-undo)
+  (kill-all-local-variables)
+  (setq truncate-lines t)
+  (setq mode-name "Justl")
+  (setq major-mode 'justl-mode)
+  (use-local-map just-enhanced-mode-map)
+  (hl-line-mode 1)
+)
+
+
+(provide 'justl)
+o

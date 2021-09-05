@@ -1,5 +1,7 @@
 (require 'transient)
-(require 'cl)
+(require 'cl-lib)
+(require 's)
+(require 'f)
 
 (defgroup just nil
   "Justfile customization group"
@@ -38,6 +40,14 @@
     (read-only-mode -1)
     (goto-char (point-max))
     (insert (format "%s\n" str))))
+
+(defun just--find-justfiles (dir)
+  "Find justfiles"
+  (f-files dir (lambda (file)
+                 (or
+                  (cl-equalp "justfile" (f-filename file))
+                  (cl-equalp ".justfile" (f-filename file))))
+           t))
 
 (defun just--log-command (process-name cmd)
   "Log the just command to the process buffer.

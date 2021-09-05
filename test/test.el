@@ -10,8 +10,12 @@
   (should (equal (jrecipe-args (just--list-to-jrecipe (list "recipe"))) nil)))
 
 (ert-deftest just--is-recipe-line-test ()
-  (should (equal (just--is-recipe-line "default:") t)))
+  (should (equal (just--is-recipe-line "default:") t))
+  (should (equal (just--is-recipe-line "build-cmd version='0.4':") t))
+  (should (equal (just--is-recipe-line "push version: (build-cmd version)") t))
+  (should (equal (just--is-recipe-line "    just --list") nil)))
 
-
+(ert-deftest just--find-justfiles-test ()
+  (should (equal (length (just--find-justfiles ".")) 1)))
 
 (ert "just--*")

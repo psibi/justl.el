@@ -42,12 +42,60 @@
     (insert (format "%s\n" str))))
 
 (defun just--find-justfiles (dir)
-  "Find justfiles"
+  "Find justfiles and returns a list of them"
   (f-files dir (lambda (file)
                  (or
                   (cl-equalp "justfile" (f-filename file))
                   (cl-equalp ".justfile" (f-filename file))))
            t))
+
+(defun just--get-recipe-name (str)
+  "Get the recipe name"
+  (if (s-contains? " " str)
+      (car (split-string str " "))
+    str))
+
+(defun just--arg-to-jarg (str)
+  "Convert argument to jarg"
+  (let* ((arg (s-split "=" str)))
+    (make-jarg :arg (nth 0 arg) :default (nth 1 arg))))
+
+(just--arg-to-jarg "version='0.4'")
+
+(defun just--str-to-jarg (str)
+  "Convert string to jarg. The string after the recipe name and
+before the build constraints is expected."
+  (if (and (not (s-blank? str)) str)
+      (let* ((args (s-split " " str)))
+        (map 'list 'just--arg-to-jarg args))
+      nil
+        ))
+
+(defun just--get-recipe-arg (str)
+  "Get the recipe postitional argument name"
+  (if (and (not (s-blank? str)) str)
+      (let*
+          ((args (split-string str " "))
+           (justargs (cdr args)))
+          (map 'list 'just--str-to-jarg justargs)
+        )
+    nil))
+
+(just--get-recipe-arg "push version1 version2")
+(just--get-recipe-arg nil)
+(just--get-recipe-arg "build-cmd version='0.4'")
+(just--get-recipe-arg "push version: (build-cmd version)")
+
+(defun just--parse-recipe (str)
+  "Analyze a single recipe"
+  (let*
+      ((recipe-list (s-split ":" str))
+       (recipe-command (just--get-recipe-name (nth 0 recipe-list)))
+       (args-str (string-join (cdr (s-split " " (nth 0 recipe-list))) ", "))
+       (recipe-jargs (just--str-to-jarg args-str))
+       )
+    (make-jrecipe :name recipe-command :args recipe-jargs)
+      ))
 
 (defun just--log-command (process-name cmd)
   "Log the just command to the process buffer.

@@ -6,3 +6,6 @@ build-cmd version='0.4':
 
 push version: (build-cmd version)
     build-cmd {{version}}
+
+push2 version1 version2:
+    echo {{version1}} {{version2}}

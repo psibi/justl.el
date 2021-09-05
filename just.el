@@ -26,6 +26,12 @@
 (defconst just--process-buffer "*just-process*"
   "Just process buffer name.")
 
+(defun just--is-recipe-line (str)
+  "Is it a recipe line"
+  (if (string-match "\\`[ \t\n\r]+" str)
+      nil
+    (s-contains? ":" str)))
+
 (defun just--append-to-process-buffer (str)
   "Append string STR to the process buffer."
   (with-current-buffer (get-buffer-create just--process-buffer)
@@ -93,6 +99,17 @@ CMD is the command string to run."
   (let ((recipies (split-string (just--exec-to-string
                                  (format "just --summary --unsorted")) " ")))
     (map 'list 'string-trim-right recipies)))
+
+(defun just--get-jrecipies ()
+  "Get list of jrecipes"
+  (let ((recipies (just--get-recipies))
+        )
+    (map 'make-jrecipe recipies))
+)
+
+(defun just--list-to-jrecipe (list)
+  "Convert list to jrecipe"
+  (make-jrecipe :name (nth 0 list) :args (nth 1 list)))
 
 (defun just-exec-recipie ()
   "Set the namespace."

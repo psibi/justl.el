@@ -18,6 +18,9 @@
 (ert-deftest just--find-justfiles-test ()
   (should (equal (length (just--find-justfiles ".")) 1)))
 
+(ert-deftest just--get-recipe-from-file-test ()
+  (should (equal (justl--get-recipe-from-file "./justfile" "default") (make-jrecipe :name "default" :args nil))))
+
 (ert-deftest just--get-recipe-name-test ()
   (should (equal (just--get-recipe-name "default") "default"))
   (should (equal (just--get-recipe-name "build-cmd version='0.4'") "build-cmd"))

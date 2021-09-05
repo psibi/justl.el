@@ -206,6 +206,13 @@ CMD is the command string to run."
     ("e" "Exec" justl-exec-recipe)
    ]])
 
+(defun justl--get-recipe-from-file (filename recipe)
+  (let* ((jcontent (f-read-text filename))
+    (recipe-lines (split-string jcontent "\n"))
+    (all-recipe (seq-filter 'just--is-recipe-line recipe-lines))
+    (current-recipe (seq-filter (lambda (x) (s-contains? recipe x)) recipe-lines)))
+    (just--parse-recipe (car current-recipe))))
+
 (defun justl-exec-recipe ()
   "exec into pod"
   (interactive)

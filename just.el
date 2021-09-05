@@ -27,6 +27,14 @@
   "Return the error buffer name for the PROCESS-NAME."
   (format "*%s:err*" process-name))
 
+(defun justl--pop-to-buffer (name)
+  "Utility function to pop to buffer or create it.
+
+NAME is the buffer name."
+  (unless (get-buffer name)
+    (get-buffer-create name))
+  (pop-to-buffer-same-window name))
+
 (defvar just--last-command nil)
 
 (defconst just--process-buffer "*just-process*"
@@ -41,7 +49,7 @@
 (defun just--append-to-process-buffer (str)
   "Append string STR to the process buffer."
   (with-current-buffer (get-buffer-create just--process-buffer)
-    (read-only-mode -1)
+    ;; (read-only-mode -1)
     (goto-char (point-max))
     (insert (format "%s\n" str))))
 
@@ -63,8 +71,6 @@
   "Convert argument to jarg"
   (let* ((arg (s-split "=" str)))
     (make-jarg :arg (nth 0 arg) :default (nth 1 arg))))
-
-(just--arg-to-jarg "version='0.4'")
 
 (defun just--str-to-jarg (str)
   "Convert string to jarg. The string after the recipe name and
@@ -174,27 +180,31 @@ CMD is the command string to run."
     map)
   "Keymap for `just-mode'.")
 
-;; (setq test "hell")
+(defun just--buffer-name ()
+  "Return kubel buffer name."
+  (format "*just [%s]" default-directory))
 
-;; (bound-and-true-p nil)
+(defvar justl--line-number nil
+  "Store the current line number to jump back after a refresh.")
 
-;; (defun just-runner (path args)
-;;   (let ((justfile-arg (if (bound-and-true-p path)
-;;                           (list "--justfile" path)
-;;                         nil))))
-;;   (call-process just-executable))
-
-;; (defun just-list-entries (path)
-;;   (just-executable)
-;;   )
+(defun justl--save-line ()
+  "Save the current line number if the view is unchanged."
+  (if (equal (buffer-name (current-buffer))
+             (just--buffer-name))
+      (setq justl--line-number (+ 1 (count-lines 1 (point))))
+    (setq justl--line-number nil)))
 
 ;;;###autoload
 (defun justl ()
   "Invoke the justl buffer."
   (interactive)
-  (justl-mode))
+  (justl--save-line)
+  (justl--pop-to-buffer (just--buffer-name))
+  (justl-mode)
+  (message (concat "Just: " default-directory))
+  )
 
-(define-derived-mode justl-mode fundamental-mode  "Justl"
+(define-derived-mode justl-mode tabulated-list-mode  "Justl"
   "Special mode for justl buffers."
   (buffer-disable-undo)
   (kill-all-local-variables)
@@ -202,9 +212,19 @@ CMD is the command string to run."
   (setq mode-name "Justl")
   (setq major-mode 'justl-mode)
   (use-local-map just-enhanced-mode-map)
-  (hl-line-mode 1)
-)
+  (let ((entries (just--get-recipies)))
+    (setq tabulated-list-format [("Recipies" 50 t)])
+    (setq tabulated-list-entries entries))
+  (setq tabulated-list-sort-key justl--list-sort-key)
+  (setq tabulated-list-sort-key nil)
+  (tabulated-list-init-header)
+  (tabulated-list-print)
+  (tablist-minor-mode)
+  (hl-line-mode 1))
+
+(defconst justl--list-sort-key
+  '("NAME" . nil)
+  "Sort table on this key.")
 
 
 (provide 'justl)
-o

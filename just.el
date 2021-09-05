@@ -19,6 +19,10 @@
 (cl-defstruct jrecipe name args)
 (cl-defstruct jarg arg default)
 
+(defun just--jrecipe-has-args (jrecipe)
+  "Checks if jreceipe has any arguments"
+  (null (jrecipe-args jrecipe)))
+
 (defun just--process-error-buffer (process-name)
   "Return the error buffer name for the PROCESS-NAME."
   (format "*%s:err*" process-name))
@@ -70,21 +74,6 @@ before the build constraints is expected."
         (map 'list 'just--arg-to-jarg args))
       nil
         ))
-
-(defun just--get-recipe-arg (str)
-  "Get the recipe postitional argument name"
-  (if (and (not (s-blank? str)) str)
-      (let*
-          ((args (split-string str " "))
-           (justargs (cdr args)))
-          (map 'list 'just--str-to-jarg justargs)
-        )
-    nil))
-
-(just--get-recipe-arg "push version1 version2")
-(just--get-recipe-arg nil)
-(just--get-recipe-arg "build-cmd version='0.4'")
-(just--get-recipe-arg "push version: (build-cmd version)")
 
 (defun just--parse-recipe (str)
   "Analyze a single recipe"

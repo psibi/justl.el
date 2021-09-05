@@ -203,38 +203,40 @@ CMD is the command string to run."
     ;; global
     ("g" "Refresh" justl)]
    ["" ;; based on current view
-    ("e" "Exec" justl-exec-popup)
+    ("e" "Exec" justl-exec-recipe)
    ]])
 
-(define-transient-command justl-exec-popup ()
-  "Kubel Exec Menu"
-  ["Actions"
-   ("e" "Eshell" justl-exec-shell-recipe)
-   ("s" "Shell" justl-exec-shell-recipe)])
-
-(defun justl-exec-shell-recipe ()
+(defun justl-exec-recipe ()
   "exec into pod"
   (interactive)
-  (message "todo: implement it")
+  (let* ((recipe (justl--get-word-under-cursor)))
+    (just--exec "just" (list recipe)))
   )
 
-;; (defun kubel-exec-shell-pod ()
-;;   "Exec into the pod under the cursor -> shell."
-;;   (interactive)
-;;   (kubel-setup-tramp)
-;;   (let* ((dir-prefix (or
-;;                       (when (tramp-tramp-file-p default-directory)
-;;                         (with-parsed-tramp-file-name default-directory nil
-;;                           (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
-;;          (pod (if (kubel--is-pod-view)
-;;                   (kubel--get-resource-under-cursor)
-;;                 (kubel--select-resource "Pods")))
-;;          (containers (kubel--get-containers pod))
-;;          (container (if (equal (length containers) 1)
-;;                         (car containers)
-;;                       (completing-read "Select container: " containers)))
-;;          (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod)))
-;;     (shell (format "*kubel - shell - %s@%s*" container pod))))
+
+(defun justl--get-word-under-cursor ()
+  "Utility function to get the name of the recipe under the cursor.
+Strip the `*` prefix if the resource is selected"
+  (replace-regexp-in-string
+   "^" "" (aref (tabulated-list-get-entry) 0)))
+
+(defun kubel-exec-shell-pod ()
+  "Exec into the pod under the cursor -> shell."
+  (interactive)
+  (kubel-setup-tramp)
+  (let* ((dir-prefix (or
+                      (when (tramp-tramp-file-p default-directory)
+                        (with-parsed-tramp-file-name default-directory nil
+                          (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+         (pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
+         (containers (kubel--get-containers pod))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers)))
+         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod)))
+    (shell (format "*kubel - shell - %s@%s*" container pod))))
 
 (defun justl--jump-back-to-line ()
   "Jump back to the last cached line number."

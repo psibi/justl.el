@@ -49,7 +49,7 @@ NAME is the buffer name."
 (defun just--append-to-process-buffer (str)
   "Append string STR to the process buffer."
   (with-current-buffer (get-buffer-create just--process-buffer)
-    ;; (read-only-mode -1)
+    (read-only-mode -1)
     (goto-char (point-max))
     (insert (format "%s\n" str))))
 
@@ -135,10 +135,7 @@ READONLY If true buffer will be in readonly mode(view-mode)."
                   :file-handler t
                   :stderr error-buffer
                   :command cmd)
-    (pop-to-buffer buffer-name '(display-buffer-below-selected . ()))
-    (if readonly
-        (with-current-buffer buffer-name
-          (view-mode)))))
+    (pop-to-buffer buffer-name '(display-buffer-below-selected . ()))))
 
 (defun just--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.
@@ -150,7 +147,7 @@ CMD is the command string to run."
 (defun just--get-recipies ()
   "Get all the recipies"
   (let ((recipies (split-string (just--exec-to-string
-                                 (format "just --summary --unsorted")) " ")))
+                                 (format "just --summary --unsorted")))))
     (map 'list 'string-trim-right recipies)))
 
 (defun just--get-jrecipies ()
@@ -177,6 +174,7 @@ CMD is the command string to run."
   (let ((map (make-sparse-keymap)))
     ;; global
     (define-key map (kbd "l") 'just-list-recipies)
+    (define-key map (kbd "?") 'justl-help-popup)
     map)
   "Keymap for `just-mode'.")
 
@@ -201,25 +199,66 @@ CMD is the command string to run."
   (justl--save-line)
   (justl--pop-to-buffer (just--buffer-name))
   (justl-mode)
-  (message (concat "Just: " default-directory))
+  (message (concat "Just: " default-directory)))
+
+(defun justl--tabulated-entries (recipies)
+  "Turn to tabulated entries"
+  (map 'list (lambda (x) (list nil (vector x))) recipies))
+
+(define-transient-command justl-help-popup ()
+  "Kubel Menu"
+  [["Actions"
+    ;; global
+    ("g" "Refresh" justl)]
+   ["" ;; based on current view
+    ("e" "Exec" justl-exec-popup)
+   ]])
+
+(define-transient-command justl-exec-popup ()
+  "Kubel Exec Menu"
+  ["Actions"
+   ("e" "Eshell" justl-exec-shell-recipe)
+   ("s" "Shell" justl-exec-shell-recipe)])
+
+(defun justl-exec-shell-recipe ()
+  "exec into pod"
+  (interactive)
+  (message "todo: implement it")
   )
+
+;; (defun kubel-exec-shell-pod ()
+;;   "Exec into the pod under the cursor -> shell."
+;;   (interactive)
+;;   (kubel-setup-tramp)
+;;   (let* ((dir-prefix (or
+;;                       (when (tramp-tramp-file-p default-directory)
+;;                         (with-parsed-tramp-file-name default-directory nil
+;;                           (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+;;          (pod (if (kubel--is-pod-view)
+;;                   (kubel--get-resource-under-cursor)
+;;                 (kubel--select-resource "Pods")))
+;;          (containers (kubel--get-containers pod))
+;;          (container (if (equal (length containers) 1)
+;;                         (car containers)
+;;                       (completing-read "Select container: " containers)))
+;;          (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod)))
+;;     (shell (format "*kubel - shell - %s@%s*" container pod))))
 
 (define-derived-mode justl-mode tabulated-list-mode  "Justl"
   "Special mode for justl buffers."
-  (buffer-disable-undo)
   (kill-all-local-variables)
   (setq truncate-lines t)
   (setq mode-name "Justl")
   (setq major-mode 'justl-mode)
   (use-local-map just-enhanced-mode-map)
   (let ((entries (just--get-recipies)))
-    (setq tabulated-list-format [("Recipies" 50 t)])
-    (setq tabulated-list-entries entries))
+    (setq tabulated-list-format [("Recipies" 10 t)])
+    (setq tabulated-list-entries (justl--tabulated-entries entries))
+    )
   (setq tabulated-list-sort-key justl--list-sort-key)
   (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header)
-  (tabulated-list-print)
-  (tablist-minor-mode)
+  (tabulated-list-print t)
   (hl-line-mode 1))
 
 (defconst justl--list-sort-key

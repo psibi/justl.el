@@ -169,12 +169,13 @@ CMD is the command string to run."
     (just--exec "just" (list recipies))
     ))
 
-;; mode map
 (defvar justl-mode-map
   (let ((map (make-sparse-keymap)))
     ;; global
     (define-key map (kbd "l") 'just-list-recipies)
+    (define-key map (kbd "g") 'justl)
     (define-key map (kbd "?") 'justl-help-popup)
+    (define-key map (kbd "h") 'justl-help-popup)
     map)
   "Keymap for `justl-mode'.")
 
@@ -192,21 +193,12 @@ CMD is the command string to run."
       (setq justl--line-number (+ 1 (count-lines 1 (point))))
     (setq justl--line-number nil)))
 
-;;;###autoload
-(defun justl ()
-  "Invoke the justl buffer."
-  (interactive)
-  (justl--save-line)
-  (justl--pop-to-buffer (just--buffer-name))
-  (justl-mode)
-  (message (concat "Just: " default-directory)))
-
 (defun justl--tabulated-entries (recipies)
   "Turn to tabulated entries"
   (map 'list (lambda (x) (list nil (vector x))) recipies))
 
 (define-transient-command justl-help-popup ()
-  "Kubel Menu"
+  "Justl Menu"
   [["Actions"
     ;; global
     ("g" "Refresh" justl)]
@@ -244,8 +236,23 @@ CMD is the command string to run."
 ;;          (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod)))
 ;;     (shell (format "*kubel - shell - %s@%s*" container pod))))
 
+(defun justl--jump-back-to-line ()
+  "Jump back to the last cached line number."
+  (when justl--line-number
+    (goto-line justl--line-number)))
+
+;;;###autoload
+(defun justl ()
+  "Invoke the justl buffer."
+  (interactive)
+  (justl--save-line)
+  (justl--pop-to-buffer (just--buffer-name))
+  (justl-mode)
+  (message (concat "Just: " default-directory)))
+
 (define-derived-mode justl-mode tabulated-list-mode  "Justl"
   "Special mode for justl buffers."
+  (buffer-disable-undo)
   (kill-all-local-variables)
   (setq truncate-lines t)
   (setq mode-name "Justl")
@@ -259,7 +266,10 @@ CMD is the command string to run."
   ;; (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header)
   (tabulated-list-print t)
-  (hl-line-mode 1))
+  (hl-line-mode 1)
+  (run-mode-hooks 'kubel-mode-hook))
+
+(add-hook 'justl-mode-hook #'justl--jump-back-to-line)
 
 (defconst justl--list-sort-key
   '("Recipies" . nil)

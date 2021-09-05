@@ -170,13 +170,13 @@ CMD is the command string to run."
     ))
 
 ;; mode map
-(defvar just-enhanced-mode-map
+(defvar justl-mode-map
   (let ((map (make-sparse-keymap)))
     ;; global
     (define-key map (kbd "l") 'just-list-recipies)
     (define-key map (kbd "?") 'justl-help-popup)
     map)
-  "Keymap for `just-mode'.")
+  "Keymap for `justl-mode'.")
 
 (defun just--buffer-name ()
   "Return kubel buffer name."
@@ -250,19 +250,19 @@ CMD is the command string to run."
   (setq truncate-lines t)
   (setq mode-name "Justl")
   (setq major-mode 'justl-mode)
-  (use-local-map just-enhanced-mode-map)
+  (use-local-map justl-mode-map)
   (let ((entries (just--get-recipies)))
     (setq tabulated-list-format [("Recipies" 10 t)])
     (setq tabulated-list-entries (justl--tabulated-entries entries))
     )
   (setq tabulated-list-sort-key justl--list-sort-key)
-  (setq tabulated-list-sort-key nil)
+  ;; (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header)
   (tabulated-list-print t)
   (hl-line-mode 1))
 
 (defconst justl--list-sort-key
-  '("NAME" . nil)
+  '("Recipies" . nil)
   "Sort table on this key.")
 
 

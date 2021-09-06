@@ -103,7 +103,7 @@ before the build constraints is expected."
   (let*
       ((recipe-list (s-split ":" str))
        (recipe-command (just--get-recipe-name (nth 0 recipe-list)))
-       (args-str (string-join (cdr (s-split " " (nth 0 recipe-list))) ", "))
+       (args-str (string-join (cdr (s-split " " (nth 0 recipe-list))) " "))
        (recipe-jargs (just--str-to-jarg args-str))
        )
     (make-jrecipe :name recipe-command :args recipe-jargs)
@@ -228,8 +228,10 @@ CMD is the command string to run."
     (recipe-lines (split-string jcontent "\n"))
     (all-recipe (seq-filter 'just--is-recipe-line recipe-lines))
     (current-recipe (seq-filter (lambda (x) (s-contains? recipe x)) recipe-lines)))
-    (just--parse-recipe (car current-recipe))))
+    (just--parse-recipe (car current-recipe))
+    ))
 
+;; todo
 (defun justl-exec-recipe ()
   "exec into pod"
   (interactive)
@@ -238,8 +240,11 @@ CMD is the command string to run."
          (just-recipe (justl--get-recipe-from-file (car justfile) recipe))
          (recipe-has-args (just--jrecipe-has-args just-recipe)))
     (if recipe-has-args
-        (message "todo")
-      (just--exec "just" (list recipe)))))
+        (let* ((cmd-args (just--jrecipe-get-args just-recipe))
+               ;; (user-args (read-from-minibuffer (string-join cmd-args " ")))
+               )
+          (message just-recipe)
+      (just--exec "just" (list recipe))))))
 
 
 (defun justl--get-word-under-cursor ()

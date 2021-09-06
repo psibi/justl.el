@@ -220,10 +220,9 @@ CMD is the command string to run."
     ("-d" "Dry run" "--dry-run")]
    ["Actions"
     ;; global
-    ("g" "Refresh" justl)]
-   ["" ;; based on current view
-    ("e" "Exec" justl-exec-recipe)
-   ]])
+    ("g" "Refresh" justl)
+    ("e" "Exec" justl-exec-recipe)]
+   ])
 
 (defun justl--get-recipe-from-file (filename recipe)
   (let* ((jcontent (f-read-text filename))
@@ -241,13 +240,14 @@ ARGS is the arguments lit from transient"
   (let* ((recipe (justl--get-word-under-cursor))
          (justfile (just--find-justfiles default-directory))
          (just-recipe (justl--get-recipe-from-file (car justfile) recipe))
+         (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (just--jrecipe-has-args just-recipe)))
     (if recipe-has-args
         (let* ((cmd-args (just--jrecipe-get-args just-recipe))
                (user-args (read-from-minibuffer "Just args: " (string-join cmd-args " ")))
                )
-          (just--exec "just" (cons (jrecipe-name just-recipe) (split-string user-args " "))))
-      (just--exec "just" (list recipe)))))
+          (just--exec "just" (append t-args  (cons (jrecipe-name just-recipe) (split-string user-args " ")))))
+      (just--exec "just" (append t-args (list recipe))))))
 
 (defun justl--get-word-under-cursor ()
   "Utility function to get the name of the recipe under the cursor."

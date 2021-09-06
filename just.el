@@ -31,7 +31,7 @@
 
 (defun just--arg-to-str (jarg)
   "Convert jarg to string to make it ready as argument"
-  (format "%s=%s" (jarg-arg jarg) (jarg-default jarg)))
+  (format "%s=%s" (jarg-arg jarg) (just--util-maybe (jarg-default jarg) "")))
 
 (defun just--jrecipe-get-args (jrecipe)
   "Convert jrecipe args to list of strings for process arguments"
@@ -231,7 +231,6 @@ CMD is the command string to run."
     (just--parse-recipe (car current-recipe))
     ))
 
-;; todo
 (defun justl-exec-recipe ()
   "exec into pod"
   (interactive)
@@ -241,34 +240,15 @@ CMD is the command string to run."
          (recipe-has-args (just--jrecipe-has-args just-recipe)))
     (if recipe-has-args
         (let* ((cmd-args (just--jrecipe-get-args just-recipe))
-               ;; (user-args (read-from-minibuffer (string-join cmd-args " ")))
+               (user-args (read-from-minibuffer "Just args: " (string-join cmd-args " ")))
                )
-          (message just-recipe)
-      (just--exec "just" (list recipe))))))
-
+          (just--exec "just" (cons (jrecipe-name just-recipe) (split-string user-args " "))))
+      (just--exec "just" (list recipe)))))
 
 (defun justl--get-word-under-cursor ()
   "Utility function to get the name of the recipe under the cursor."
   (replace-regexp-in-string
    "^" "" (aref (tabulated-list-get-entry) 0)))
-
-(defun kubel-exec-shell-pod ()
-  "Exec into the pod under the cursor -> shell."
-  (interactive)
-  (kubel-setup-tramp)
-  (let* ((dir-prefix (or
-                      (when (tramp-tramp-file-p default-directory)
-                        (with-parsed-tramp-file-name default-directory nil
-                          (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
-         (pod (if (kubel--is-pod-view)
-                  (kubel--get-resource-under-cursor)
-                (kubel--select-resource "Pods")))
-         (containers (kubel--get-containers pod))
-         (container (if (equal (length containers) 1)
-                        (car containers)
-                      (completing-read "Select container: " containers)))
-         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod)))
-    (shell (format "*kubel - shell - %s@%s*" container pod))))
 
 (defun justl--jump-back-to-line ()
   "Jump back to the last cached line number."

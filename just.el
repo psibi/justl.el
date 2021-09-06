@@ -216,7 +216,9 @@ CMD is the command string to run."
 
 (define-transient-command justl-help-popup ()
   "Justl Menu"
-  [["Actions"
+  [["Arguments"
+    ("-d" "Dry run" "--dry-run")]
+   ["Actions"
     ;; global
     ("g" "Refresh" justl)]
    ["" ;; based on current view
@@ -231,8 +233,10 @@ CMD is the command string to run."
     (just--parse-recipe (car current-recipe))
     ))
 
-(defun justl-exec-recipe ()
-  "exec into pod"
+(defun justl-exec-recipe (&optional args)
+  "Execute just recipe.
+
+ARGS is the arguments lit from transient"
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
          (justfile (just--find-justfiles default-directory))

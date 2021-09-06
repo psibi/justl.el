@@ -150,9 +150,9 @@ READONLY If true buffer will be in readonly mode(view-mode)."
                   :buffer buffer-name
                   :sentinel #'just--sentinel
                   :file-handler t
-                  :stderr error-buffer
+                  :stderr buffer-name
                   :command cmd)
-    (pop-to-buffer buffer-name '(display-buffer-below-selected . ()))))
+    (pop-to-buffer buffer-name)))
 
 (defun just--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.
@@ -261,8 +261,7 @@ CMD is the command string to run."
   (interactive)
   (justl--save-line)
   (justl--pop-to-buffer (just--buffer-name))
-  (justl-mode)
-  (message (concat "Just: " default-directory)))
+  (justl-mode))
 
 (define-derived-mode justl-mode tabulated-list-mode  "Justl"
   "Special mode for justl buffers."
@@ -272,16 +271,19 @@ CMD is the command string to run."
   (setq mode-name "Justl")
   (setq major-mode 'justl-mode)
   (use-local-map justl-mode-map)
-  (let ((entries (just--get-recipies)))
-    (setq tabulated-list-format [("Recipies" 10 t)])
-    (setq tabulated-list-entries (justl--tabulated-entries entries))
-    )
-  (setq tabulated-list-sort-key justl--list-sort-key)
-  ;; (setq tabulated-list-sort-key nil)
-  (tabulated-list-init-header)
-  (tabulated-list-print t)
-  (hl-line-mode 1)
-  (run-mode-hooks 'kubel-mode-hook))
+  (let ((justfiles (just--find-justfiles default-directory))
+        (entries (just--get-recipies)))
+    (if (null justfiles)
+        (message "No justfiles found")
+      (progn
+        (setq tabulated-list-format [("Recipies" 10 t)])
+        (setq tabulated-list-entries (justl--tabulated-entries entries))
+        (setq tabulated-list-sort-key justl--list-sort-key)
+        (tabulated-list-init-header)
+        (tabulated-list-print t)
+        (hl-line-mode 1)
+        (message (concat "Just: " default-directory))
+        (run-mode-hooks 'kubel-mode-hook)))))
 
 (add-hook 'justl-mode-hook #'justl--jump-back-to-line)
 

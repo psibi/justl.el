@@ -5,7 +5,7 @@ build-cmd version='0.4':
     echo {{version}}
 
 push version: (build-cmd version)
-    build-cmd {{version}}
+    echo {{version}}
 
 push2 version1 version2:
     echo {{version1}} {{version2}}

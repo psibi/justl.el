@@ -191,6 +191,7 @@ CMD is the command string to run."
     ;; global
     (define-key map (kbd "l") 'just-list-recipies)
     (define-key map (kbd "g") 'justl)
+    (define-key map (kbd "e") 'justl-exec-recipe)
     (define-key map (kbd "?") 'justl-help-popup)
     (define-key map (kbd "h") 'justl-help-popup)
     map)
@@ -228,7 +229,7 @@ CMD is the command string to run."
   (let* ((jcontent (f-read-text filename))
     (recipe-lines (split-string jcontent "\n"))
     (all-recipe (seq-filter 'just--is-recipe-line recipe-lines))
-    (current-recipe (seq-filter (lambda (x) (s-contains? recipe x)) recipe-lines)))
+    (current-recipe (seq-filter (lambda (x) (s-contains? recipe x)) all-recipe)))
     (just--parse-recipe (car current-recipe))
     ))
 

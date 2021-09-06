@@ -1,8 +1,14 @@
+# List all recipies
 default:
     just --list
 
+# Build command
 build-cmd version='0.4':
     echo {{version}}
+
+# Terraform plan
+plan:
+    echo "plan"
 
 push version: (build-cmd version)
     echo {{version}}

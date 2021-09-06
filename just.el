@@ -21,7 +21,24 @@
 
 (defun just--jrecipe-has-args (jrecipe)
   "Checks if jreceipe has any arguments"
-  (null (jrecipe-args jrecipe)))
+  (not (null (jrecipe-args jrecipe))))
+
+(defun just--util-maybe (maybe default)
+  "Maybe combinator"
+  (if (null maybe)
+  default
+  maybe))
+
+(defun just--arg-to-str (jarg)
+  "Convert jarg to string to make it ready as argument"
+  (format "%s=%s" (jarg-arg jarg) (jarg-default jarg)))
+
+(defun just--jrecipe-get-args (jrecipe)
+  "Convert jrecipe args to list of strings for process arguments"
+  (let* ((recipe-args (jrecipe-args jrecipe))
+         (args (just--util-maybe recipe-args (list))))
+    (map 'list 'just--arg-to-str args)
+  ))
 
 (defun just--process-error-buffer (process-name)
   "Return the error buffer name for the PROCESS-NAME."
@@ -216,14 +233,17 @@ CMD is the command string to run."
 (defun justl-exec-recipe ()
   "exec into pod"
   (interactive)
-  (let* ((recipe (justl--get-word-under-cursor)))
-    (just--exec "just" (list recipe)))
-  )
+  (let* ((recipe (justl--get-word-under-cursor))
+         (justfile (just--find-justfiles default-directory))
+         (just-recipe (justl--get-recipe-from-file (car justfile) recipe))
+         (recipe-has-args (just--jrecipe-has-args just-recipe)))
+    (if recipe-has-args
+        (message "todo")
+      (just--exec "just" (list recipe)))))
 
 
 (defun justl--get-word-under-cursor ()
-  "Utility function to get the name of the recipe under the cursor.
-Strip the `*` prefix if the resource is selected"
+  "Utility function to get the name of the recipe under the cursor."
   (replace-regexp-in-string
    "^" "" (aref (tabulated-list-get-entry) 0)))
 

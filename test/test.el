@@ -9,6 +9,15 @@
   (should (equal (jrecipe-name (just--list-to-jrecipe (list "recipe"))) "recipe"))
   (should (equal (jrecipe-args (just--list-to-jrecipe (list "recipe"))) nil)))
 
+(ert-deftest just--recipe-has-args-test ()
+  (should (equal (just--jrecipe-has-args (make-jrecipe :name "default" :args nil)) nil))
+  )
+
+(ert-deftest just--jrecipe-get-args-test ()
+  (should (equal (just--jrecipe-get-args (make-jrecipe :name "default" :args nil)) (list)))
+  (should (equal (just--jrecipe-get-args (make-jrecipe :name "default" :args (list (make-jarg :arg "version" :default "'0.4'")))) (list "version='0.4'")))
+  )
+
 (ert-deftest just--is-recipe-line-test ()
   (should (equal (just--is-recipe-line "default:") t))
   (should (equal (just--is-recipe-line "build-cmd version='0.4':") t))

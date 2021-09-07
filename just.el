@@ -4,17 +4,17 @@
 (require 's)
 (require 'f)
 
-(defgroup just nil
+(defgroup justl nil
   "Justfile customization group"
   :group 'languages
-  :prefix "just-"
+  :prefix "justl-"
   :link '(url-link :tag "Site" "https://github.com/psibi/just.el")
   :link '(url-link :tag "Repository" "https://github.com/psibi/just.el"))
 
-(defcustom just-executable "just"
+(defcustom justl-executable "just"
   "Location of just executable."
   :type 'file
-  :group 'just
+  :group 'justl
   :safe 'stringp)
 
 (cl-defstruct jrecipe name args)
@@ -291,12 +291,15 @@ ARGS is the arguments lit from transient"
   (use-local-map justl-mode-map)
   (let ((justfiles (just--find-justfiles default-directory))
         (entries (just--get-recipies)))
+    (message (format "test %s" entries))
+    (message (format "test2  %s" (justl--tabulated-entries entries)))
     (if (null justfiles)
         (message "No justfiles found")
       (progn
-        (setq tabulated-list-format [("Recipies" 10 t)])
+        (setq tabulated-list-format [("RECIPIES" 10 t)])
         (setq tabulated-list-entries (justl--tabulated-entries entries))
         (setq tabulated-list-sort-key justl--list-sort-key)
+        (setq tabulated-list-sort-key nil)
         (tabulated-list-init-header)
         (tabulated-list-print t)
         (hl-line-mode 1)

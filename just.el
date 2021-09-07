@@ -1,5 +1,6 @@
 (require 'transient)
 (require 'cl-lib)
+(require 'xterm-color)
 (require 's)
 (require 'f)
 
@@ -148,11 +149,23 @@ READONLY If true buffer will be in readonly mode(view-mode)."
     (just--log-command process-name cmd)
     (make-process :name process-name
                   :buffer buffer-name
+                  :filter 'just--xterm-color-filter
                   :sentinel #'just--sentinel
                   :file-handler t
-                  :stderr buffer-name
+                  :stderr nil
                   :command cmd)
     (pop-to-buffer buffer-name)))
+
+(defun just--xterm-color-filter (proc string)
+  (when (buffer-live-p (process-buffer proc))
+    (with-current-buffer (process-buffer proc)
+      (let ((moving (= (point) (process-mark proc))))
+        (save-excursion
+          ;; Insert the text, advancing the process marker.
+          (goto-char (process-mark proc))
+          (insert (xterm-color-filter string)
+          (set-marker (process-mark proc) (point)))
+        (if moving (goto-char (process-mark proc))))))))
 
 (defun just--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.

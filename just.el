@@ -60,9 +60,13 @@ NAME is the buffer name."
 
 (defun just--is-recipe-line (str)
   "Is it a recipe line"
-  (if (string-match "\\`[ \t\n\r]+" str)
+  (if (string-match "\\`[ \t\n\r]+" (just--util-maybe str ""))
       nil
-    (s-contains? ":" str)))
+    (s-contains? ":" (just--util-maybe str ""))))
+
+(defun just--is-recipe-docs (str)
+  "Is it a recipe docs line"
+  (s-starts-with-p "#" str))
 
 (defun just--append-to-process-buffer (str)
   "Append string STR to the process buffer."
@@ -237,6 +241,60 @@ CMD is the command string to run."
     ("g" "Refresh" justl)
     ("e" "Exec" justl-exec-recipe)]
    ])
+
+(defun justl--analyze-doc-and-recipe (acc x)
+  (if x
+      (if (and (just--is-recipe-docs acc) ())
+          (list acc x)
+        nil)
+    acc))
+
+(cl-reduce )
+(list (list 1 2) (list "#hi" "hello:"))
+
+(setq just--test-list (list 1 2 3))
+(setq just--test-ans nil)
+
+(while just--test-list
+  (let* ((first (car just--test-list))
+        (second (car (cdr just--test-list)))
+        )
+    (setq just--test-list (cdr just--test-list))
+    (message (format "tt %s" first))))
+
+(defun just--extract-recipe-doc (lines)
+  (setq just--all-recipies nil)
+  (while lines
+    (let* ((first (car lines))
+           (second (car (cdr lines))))
+      (if (just--is-recipe-docs first)
+          (if (just--is-recipe-line second)
+              (progn
+                (setq just--all-recipies (append just--all-recipies (list second first)))
+                (setq lines (cdr (cdr lines))))
+
+            (setq lines (cdr lines)))
+        (progn
+          (if (just--is-recipe-line first) (progn
+                                               (setq just--all-recipies (append just--all-recipies (list first)))
+                                               (setq lines (cdr lines)))
+            (setq lines (cdr lines)))
+          (when (just--is-recipe-line second)
+            (progn
+              (setq just--all-recipies (append just--all-recipies (list second)))
+              (setq lines (cdr (cdr lines)))
+              )
+            )))))
+  just--all-recipies)
+
+(just--extract-recipe-doc (list "#hello" "hello:"))
+(just--extract-recipe-doc nil)
+(just--extract-recipe-doc (list "hi"))
+(just--extract-recipe-doc (list "#hi"))
+(just--extract-recipe-doc (list "#hello" "h" "hello:"))
+(just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi" "hello2:"))
+(just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi1" "#hi2" "#hi3" "#hi" "hello2:"))
+(just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi1" "#hi2" "#hi" "hello2:"))
 
 (defun justl--get-recipe-from-file (filename recipe)
   (let* ((jcontent (f-read-text filename))

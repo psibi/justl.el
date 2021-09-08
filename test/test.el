@@ -13,6 +13,17 @@
   (should (equal (just--jrecipe-has-args (make-jrecipe :name "default" :args nil)) nil))
   )
 
+(ert-deftest just--extract-recipe-doc-test ()
+  (should (equal (just--extract-recipe-doc (list "#hello" "hello:")) (list "hello:" "#hello")))
+  (should (equal (just--extract-recipe-doc nil) nil))
+  (should (equal (just--extract-recipe-doc (list "#hello" "#hi" "hello:")) (list "hello:" "#hi")))
+  (should (equal (just--extract-recipe-doc (list "hi")) nil))
+  (should (equal (just--extract-recipe-doc (list "#hello" "h" "hello:")) (list "hello:")))
+  (should (equal (just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi" "hello2:")) (list "hello:" "hello2:" "#hi")))
+  (should (equal (just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi1" "#hi2" "#hi3" "#hi" "hello2:")) (list "hello:" "hello2:" "#hi"))) ;; fails
+  (should (equal (just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi1" "#hi2" "#hi" "hello2:")) (list "hello:" "hello2:" "#hi")))
+  )
+
 (ert-deftest just--jrecipe-get-args-test ()
   (should (equal (just--jrecipe-get-args (make-jrecipe :name "default" :args nil)) (list)))
   (should (equal (just--jrecipe-get-args (make-jrecipe :name "default" :args (list (make-jarg :arg "version" :default "'0.4'")))) (list "version='0.4'")))

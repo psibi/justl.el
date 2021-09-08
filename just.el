@@ -242,26 +242,6 @@ CMD is the command string to run."
     ("e" "Exec" justl-exec-recipe)]
    ])
 
-(defun justl--analyze-doc-and-recipe (acc x)
-  (if x
-      (if (and (just--is-recipe-docs acc) ())
-          (list acc x)
-        nil)
-    acc))
-
-(cl-reduce )
-(list (list 1 2) (list "#hi" "hello:"))
-
-(setq just--test-list (list 1 2 3))
-(setq just--test-ans nil)
-
-(while just--test-list
-  (let* ((first (car just--test-list))
-        (second (car (cdr just--test-list)))
-        )
-    (setq just--test-list (cdr just--test-list))
-    (message (format "tt %s" first))))
-
 (defun just--extract-recipe-doc (lines)
   (setq just--all-recipies nil)
   (while lines
@@ -282,19 +262,10 @@ CMD is the command string to run."
           (when (just--is-recipe-line second)
             (progn
               (setq just--all-recipies (append just--all-recipies (list second)))
-              (setq lines (cdr (cdr lines)))
+              (setq lines (cdr lines))
               )
             )))))
   just--all-recipies)
-
-(just--extract-recipe-doc (list "#hello" "hello:"))
-(just--extract-recipe-doc nil)
-(just--extract-recipe-doc (list "hi"))
-(just--extract-recipe-doc (list "#hi"))
-(just--extract-recipe-doc (list "#hello" "h" "hello:"))
-(just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi" "hello2:"))
-(just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi1" "#hi2" "#hi3" "#hi" "hello2:"))
-(just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi1" "#hi2" "#hi" "hello2:"))
 
 (defun justl--get-recipe-from-file (filename recipe)
   (let* ((jcontent (f-read-text filename))

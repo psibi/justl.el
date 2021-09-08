@@ -135,6 +135,18 @@ CMD is the just command as a list."
       (just--append-to-process-buffer (format "error: %s" err))
       (error (format "just process %s error: %s" process-name err))))))
 
+
+(defun just--xterm-color-filter (proc string)
+  (when (buffer-live-p (process-buffer proc))
+    (with-current-buffer (process-buffer proc)
+      (let ((moving (= (point) (process-mark proc))))
+        (save-excursion
+          ;; Insert the text, advancing the process marker.
+          (goto-char (process-mark proc))
+          (insert (xterm-color-filter string))
+          (set-marker (process-mark proc) (point)))
+        (if moving (goto-char (process-mark proc)))))))
+
 (defun just--exec (process-name args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
 
@@ -160,16 +172,6 @@ READONLY If true buffer will be in readonly mode(view-mode)."
                   :command cmd)
     (pop-to-buffer buffer-name)))
 
-(defun just--xterm-color-filter (proc string)
-  (when (buffer-live-p (process-buffer proc))
-    (with-current-buffer (process-buffer proc)
-      (let ((moving (= (point) (process-mark proc))))
-        (save-excursion
-          ;; Insert the text, advancing the process marker.
-          (goto-char (process-mark proc))
-          (insert (xterm-color-filter string)
-          (set-marker (process-mark proc) (point)))
-        (if moving (goto-char (process-mark proc))))))))
 
 (defun just--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.

@@ -8,8 +8,8 @@
   "Justfile customization group"
   :group 'languages
   :prefix "justl-"
-  :link '(url-link :tag "Site" "https://github.com/psibi/just.el")
-  :link '(url-link :tag "Repository" "https://github.com/psibi/just.el"))
+  :link '(url-link :tag "Site" "https://github.com/psibi/justl.el")
+  :link '(url-link :tag "Repository" "https://github.com/psibi/justl.el"))
 
 (defcustom justl-executable "just"
   "Location of just executable."
@@ -241,7 +241,7 @@ CMD is the command string to run."
 
 (defun justl--tabulated-entries (recipies)
   "Turn to tabulated entries"
-  (map 'list (lambda (x) (list nil (vector (nth 0 x) (nth 1 x)))) recipies))
+  (map 'list (lambda (x) (list nil (vector (nth 0 x) (just--util-maybe (nth 1 x) "")))) recipies))
 
 (define-transient-command justl-help-popup ()
   "Justl Menu"

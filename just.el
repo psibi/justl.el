@@ -85,9 +85,10 @@ NAME is the buffer name."
 
 (defun just--get-recipe-name (str)
   "Get the recipe name"
-  (if (s-contains? " " str)
-      (car (split-string str " "))
-    str))
+  (let ((trim-str (s-trim str)))
+    (if (s-contains? " " trim-str)
+        (car (split-string trim-str " "))
+      trim-str)))
 
 (defun just--arg-to-jarg (str)
   "Convert argument to jarg"
@@ -192,7 +193,7 @@ CMD is the command string to run."
                                      (format "just --list --unsorted")) "\n"))
         (recipes (map 'list (lambda (x) (split-string x "# ")) (cdr (seq-filter (lambda (x) (s-present? x)) recipe-lines))))
         )
-    (map 'list (lambda (x) (nth 1 x)) recipes)))
+    (map 'list (lambda (x) (list (just--get-recipe-name (nth 0 x)) (nth 1 x))) recipes)))
 
 (defun just--get-jrecipies ()
   "Get list of jrecipes"
@@ -240,7 +241,7 @@ CMD is the command string to run."
 
 (defun justl--tabulated-entries (recipies)
   "Turn to tabulated entries"
-  (map 'list (lambda (x) (list nil (vector x "some desc"))) recipies))
+  (map 'list (lambda (x) (list nil (vector (nth 0 x) (nth 1 x)))) recipies))
 
 (define-transient-command justl-help-popup ()
   "Justl Menu"
@@ -329,7 +330,7 @@ ARGS is the arguments lit from transient"
   (setq major-mode 'justl-mode)
   (use-local-map justl-mode-map)
   (let ((justfiles (just--find-justfiles default-directory))
-        (entries (just--get-recipies)))
+        (entries (just--get-recipies-with-desc)))
     (message (format "test %s" entries))
     (message (format "test2  %s" (justl--tabulated-entries entries)))
     (if (null justfiles)

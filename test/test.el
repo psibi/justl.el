@@ -19,6 +19,9 @@
   (should (equal (just--extract-recipe-doc (list "#hello" "#hi" "hello:")) (list "hello:" "#hi")))
   (should (equal (just--extract-recipe-doc (list "hi")) nil))
   (should (equal (just--extract-recipe-doc (list "#hello" "h" "hello:")) (list "hello:")))
+  (should (equal (just--extract-recipe-doc (list "hello:")) (list "hello:")))
+  (should (equal (just--extract-recipe-doc (list "hello:" "#hi")) (list "hello:")))
+  (should (equal (just--extract-recipe-doc (list "hello:" "#hi" "he2:")) (list "hello:" "he2:" "#hi")))
   (should (equal (just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi" "hello2:")) (list "hello:" "hello2:" "#hi")))
   (should (equal (just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi1" "#hi2" "#hi3" "#hi" "hello2:")) (list "hello:" "hello2:" "#hi"))) ;; fails
   (should (equal (just--extract-recipe-doc (list "#hello" "h" "hello:" "#hi1" "#hi2" "#hi" "hello2:")) (list "hello:" "hello2:" "#hi")))
@@ -51,6 +54,8 @@
 (ert-deftest just--get-recipe-name-test ()
   (should (equal (just--get-recipe-name "default") "default"))
   (should (equal (just--get-recipe-name "build-cmd version='0.4'") "build-cmd"))
+  (should (equal (just--get-recipe-name "    push version") "push"))
+  (should (equal (just--get-recipe-name "    build-cmd version='0.4' ") "build-cmd"))
   (should (equal (just--get-recipe-name "push version:") "push"))
   (should (equal (just--get-recipe-name "push version1 version2") "push")))
 

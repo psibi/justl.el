@@ -186,12 +186,20 @@ CMD is the command string to run."
                                  (format "just --summary --unsorted")))))
     (map 'list 'string-trim-right recipies)))
 
+(defun just--get-recipies-with-desc ()
+  "Get all the recipies with description"
+  (let* ((recipe-lines (split-string (just--exec-to-string
+                                     (format "just --list --unsorted")) "\n"))
+        (recipes (map 'list (lambda (x) (split-string x "# ")) (cdr (seq-filter (lambda (x) (s-present? x)) recipe-lines))))
+        )
+    (map 'list (lambda (x) (nth 1 x)) recipes)))
+
 (defun just--get-jrecipies ()
   "Get list of jrecipes"
   (let ((recipies (just--get-recipies))
         )
     (map 'make-jrecipe recipies))
-)
+  )
 
 (defun just--list-to-jrecipe (list)
   "Convert list to jrecipe"
@@ -232,7 +240,7 @@ CMD is the command string to run."
 
 (defun justl--tabulated-entries (recipies)
   "Turn to tabulated entries"
-  (map 'list (lambda (x) (list nil (vector x))) recipies))
+  (map 'list (lambda (x) (list nil (vector x "some desc"))) recipies))
 
 (define-transient-command justl-help-popup ()
   "Justl Menu"
@@ -327,7 +335,7 @@ ARGS is the arguments lit from transient"
     (if (null justfiles)
         (message "No justfiles found")
       (progn
-        (setq tabulated-list-format [("RECIPIES" 10 t)])
+        (setq tabulated-list-format [("RECIPIES" 20 t) ("DESCRIPTION" 20 t)])
         (setq tabulated-list-entries (justl--tabulated-entries entries))
         (setq tabulated-list-sort-key justl--list-sort-key)
         (setq tabulated-list-sort-key nil)
@@ -342,6 +350,7 @@ ARGS is the arguments lit from transient"
 (defconst justl--list-sort-key
   '("Recipies" . nil)
   "Sort table on this key.")
+
 
 
 (provide 'justl)

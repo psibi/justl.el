@@ -22,14 +22,9 @@ jobs:
           - false
     steps:
     - uses: actions/checkout@v2
-    - name: Install just
-      shell: bash
-      run: |
-        set -ex
-        curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin/just
-        echo $PATH
-        chmod +x /usr/local/bin/just
-        just --version
+    - uses: extractions/setup-just@v1
+      with:
+        just-version: 0.10.1
     - uses: purcell/setup-emacs@master
       with:
         version: ${{ matrix.emacs_version }}

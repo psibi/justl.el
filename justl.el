@@ -329,9 +329,13 @@ CMD is the command string to run."
 (define-transient-command justl-help-popup ()
   "Justl Menu"
   [["Arguments"
+    ("-c" "Clear shell arguments" "--clear-shell-args")
     ("-d" "Dry run" "--dry-run")
     ("-n" "Don't load .env file" "--no-dotenv")
+    ("-h" "Highlight recipe lines" "--highlight")
+    ("-u" "Don't Highlight recipe lines" "--no-highlight")
     ("-q" "Quiet" "--quiet")
+    ("-v" "Verbose output" "--verbose")
     ]
    ["Actions"
     ;; global

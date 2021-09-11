@@ -229,12 +229,11 @@ STRING is the data returned by the PROC"
           (set-marker (process-mark proc) (point)))
         (if moving (goto-char (process-mark proc)))))))
 
-(defun justl--exec (process-name args &optional readonly)
+(defun justl--exec (process-name args)
   "Utility function to run commands in the proper context and namespace.
 
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
-ARGS is a ist of arguments.
-READONLY If true buffer will be in readonly mode(view-mode)."
+ARGS is a ist of arguments."
   (when (equal process-name "")
     (setq process-name "just"))
   (let ((buffer-name (format "*%s*" process-name))
@@ -377,7 +376,8 @@ ARGS is the arguments list from transient"
 (defun justl--jump-back-to-line ()
   "Jump back to the last cached line number."
   (when justl--line-number
-    (goto-line justl--line-number)))
+    (goto-char (point-min))
+    (forward-line (1- justl--line-number))))
 
 ;;;###autoload
 (defun justl ()
@@ -419,3 +419,4 @@ ARGS is the arguments list from transient"
   "Sort table on this key.")
 
 (provide 'justl)
+;;; justl.el ends here

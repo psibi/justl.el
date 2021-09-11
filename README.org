@@ -4,7 +4,7 @@ justl.el mode is a major mode for driving [[https://github.com/casey/just][justf
 the [[https://melpa.org/#/just-mode][just-mode]], this mode is built for listing and executing the
 recipes in the justfile via the [[https://github.com/magit/transient][transient]] keymaps.
 
-todo: insert pic
+![justl-snapshot](https://user-images.githubusercontent.com/737477/132947598-41c3d85b-6998-4b0e-b79d-29c41b2c1ced.png)
 
 * Installation
 

@@ -331,9 +331,9 @@ CMD is the command string to run."
   [["Arguments"
     ("-c" "Clear shell arguments" "--clear-shell-args")
     ("-d" "Dry run" "--dry-run")
-    ("-n" "Don't load .env file" "--no-dotenv")
-    ("-h" "Highlight recipe lines" "--highlight")
-    ("-u" "Don't Highlight recipe lines" "--no-highlight")
+    ("-e" "Disable .env file" "--no-dotenv")
+    ("-h" "Highlight" "--highlight")
+    ("-n" "Disable Highlight" "--no-highlight")
     ("-q" "Quiet" "--quiet")
     ("-v" "Verbose output" "--verbose")
     ]

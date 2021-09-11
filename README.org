@@ -1,3 +1,6 @@
+# NOTE: To avoid having this in the info manual, we use HTML rather than Org syntax; it still appears with the GitHub renderer.
+#+HTML: <a href="https://github.com/psibi/justl.el/actions"><img src="https://github.com/psibi/justl.el/actions/workflows/check.yaml/badge.svg"></a>
+
 * Introduction
 
 justl.el mode is a major mode for driving [[https://github.com/casey/just][justfiles]]. As compared to

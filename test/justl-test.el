@@ -25,26 +25,26 @@
 (ert-deftest justl--recipe-has-args-test ()
   (should (equal
            (justl--jrecipe-has-args-p
-            (make-jrecipe
+            (make-justl-jrecipe
              :name "default"
              :args nil))
            nil)))
 
 (ert-deftest justl--jrecipe-get-args-test ()
   (should (equal (justl--jrecipe-get-args
-                  (make-jrecipe
+                  (make-justl-jrecipe
                    :name "default"
                    :args nil))
                  (list)))
   (should (equal (justl--jrecipe-get-args
-                  (make-jrecipe
+                  (make-justl-jrecipe
                    :name "default"
                    :args (list (make-justl-jarg
                                 :arg "version"
                                 :default "'0.4'"))))
                  (list "version='0.4'")))
   (should (equal (justl--jrecipe-get-args
-                  (make-jrecipe
+                  (make-justl-jrecipe
                    :name "default"
                    :args (list
                           (make-justl-jarg
@@ -81,13 +81,13 @@
 (ert-deftest justl--get-recipe-from-file-test ()
   (should (equal
            (justl--get-recipe-from-file "./justfile" "default")
-           (make-jrecipe :name "default" :args nil)))
+           (make-justl-jrecipe :name "default" :args nil)))
   (should (equal
            (justl--get-recipe-from-file "./justfile" "plan")
-           (make-jrecipe :name "plan" :args nil)))
+           (make-justl-jrecipe :name "plan" :args nil)))
   (should (equal
            (justl--get-recipe-from-file "./justfile" "push2")
-           (make-jrecipe :name "push2" :args
+           (make-justl-jrecipe :name "push2" :args
                          (list (make-justl-jarg :arg "version1" :default nil)
                                (make-justl-jarg :arg "version2" :default nil))))))
 
@@ -131,26 +131,26 @@
 (ert-deftest justl--parse-recipe-test ()
   (should (equal
            (justl--parse-recipe "default:")
-           (make-jrecipe :name "default" :args nil)))
+           (make-justl-jrecipe :name "default" :args nil)))
   (should (equal
            (justl--parse-recipe "build-cmd version='0.4':")
-           (make-jrecipe
+           (make-justl-jrecipe
             :name "build-cmd"
             :args (list
                    (make-justl-jarg
                     :arg "version"
                     :default "'0.4'")))))
   (should (equal (justl--parse-recipe "push version version2:")
-                 (make-jrecipe
+                 (make-justl-jrecipe
                   :name "push"
                   :args (list (make-justl-jarg :arg "version" :default nil)
                               (make-justl-jarg :arg "version2" :default nil)))))
   (should (equal (justl--parse-recipe "push version: (build-cmd version)")
-                 (make-jrecipe
+                 (make-justl-jrecipe
                   :name "push"
                   :args (list (make-justl-jarg :arg "version" :default nil))))))
 
-(ert "justl--*")
+;; (ert "justl--*")
 
 (provide 'justl-test)
 ;;; justl-test.el ends here

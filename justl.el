@@ -1,4 +1,4 @@
-;;; justl.el --- Drive just files with Emacs -*- lexical-binding: t; -*-
+;;; justl.el --- Major mode for driving just files -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2021, Sibi Prabakaran
 
@@ -111,7 +111,7 @@ Similar to the fromMaybe function in the Haskell land."
   "Convert JRECIPE arguments to list of positional arguments."
   (let* ((recipe-args (jrecipe-args jrecipe))
          (args (justl--util-maybe recipe-args (list))))
-    (map 'list 'justl--arg-to-str args)))
+    (mapcar 'justl--arg-to-str args)))
 
 (defun justl--process-error-buffer (process-name)
   "Return the error buffer name for the PROCESS-NAME."
@@ -179,7 +179,7 @@ The string after the recipe name and before the build constraints
 is expected."
   (if (and (not (s-blank? str)) str)
       (let* ((args (s-split " " str)))
-        (map 'list 'justl--arg-to-jarg args))
+        (mapcar 'justl--arg-to-jarg args))
       nil))
 
 
@@ -265,7 +265,7 @@ CMD is the command string to run."
   (let ((recipies (split-string (justl--exec-to-string
                                  (format "%s --summary --unsorted"
                                          justl-executable)))))
-    (map 'list 'string-trim-right recipies)))
+    (mapcar 'string-trim-right recipies)))
 
 (defun justl--get-recipies-with-desc ()
   "Return all the recipies with description."
@@ -274,14 +274,14 @@ CMD is the command string to run."
                          (format "%s --list --unsorted"
                                  justl-executable))
                         "\n"))
-         (recipes (map 'list (lambda (x) (split-string x "# "))
+         (recipes (mapcar (lambda (x) (split-string x "# "))
                        (cdr (seq-filter (lambda (x) (s-present? x)) recipe-lines)))))
-    (map 'list (lambda (x) (list (justl--get-recipe-name (nth 0 x)) (nth 1 x))) recipes)))
+    (mapcar (lambda (x) (list (justl--get-recipe-name (nth 0 x)) (nth 1 x))) recipes)))
 
 (defun justl--get-jrecipies ()
   "Return list of JRECIPE."
   (let ((recipies (justl--get-recipies)))
-    (map 'make-jrecipe recipies)))
+    (mapcar 'make-jrecipe recipies)))
 
 (defun justl--list-to-jrecipe (list)
   "Convert a single LIST of two elements to list of JRECIPE."
@@ -321,7 +321,7 @@ CMD is the command string to run."
 
 (defun justl--tabulated-entries (recipies)
   "Turn RECIPIES to tabulated entries."
-  (map 'list (lambda (x)
+  (mapcar (lambda (x)
                (list nil (vector (nth 0 x) (justl--util-maybe (nth 1 x) ""))))
        recipies))
 

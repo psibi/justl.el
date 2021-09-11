@@ -320,7 +320,7 @@ CMD is the command string to run."
     (setq justl--line-number nil)))
 
 (defun justl--tabulated-entries (recipies)
-  "Turn to tabulated entries"
+  "Turn RECIPIES to tabulated entries."
   (map 'list (lambda (x)
                (list nil (vector (nth 0 x) (justl--util-maybe (nth 1 x) ""))))
        recipies))
@@ -343,16 +343,15 @@ CMD is the command string to run."
    ])
 
 (defun justl--get-recipe-from-file (filename recipe)
+  "Get specific RECIPE from the FILENAME."
   (let* ((jcontent (f-read-text filename))
          (recipe-lines (split-string jcontent "\n"))
          (all-recipe (seq-filter 'justl--is-recipe-line-p recipe-lines))
          (current-recipe (seq-filter (lambda (x) (s-contains? recipe x)) all-recipe)))
     (justl--parse-recipe (car current-recipe))))
 
-(defun justl-exec-recipe (&optional args)
-  "Execute just recipe.
-
-ARGS is the arguments list from transient"
+(defun justl-exec-recipe ()
+  "Execute just recipe."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
          (justfile (justl--find-justfiles default-directory))

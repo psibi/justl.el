@@ -86,12 +86,12 @@
   :type 'integer
   :group 'justl)
 
-(cl-defstruct jrecipe name args)
-(cl-defstruct jarg arg default)
+(cl-defstruct justl-jrecipe name args)
+(cl-defstruct justl-jarg arg default)
 
 (defun justl--jrecipe-has-args-p (jrecipe)
   "Check if JRECIPE has any arguments."
-  (not (null (jrecipe-args jrecipe))))
+  (not (null (justl-jrecipe-args jrecipe))))
 
 (defun justl--util-maybe (maybe default)
   "Return the DEFAULT value if MAYBE is null.
@@ -104,12 +104,12 @@ Similar to the fromMaybe function in the Haskell land."
 (defun justl--arg-to-str (jarg)
   "Convert JARG to just's positional argument."
   (format "%s=%s"
-          (jarg-arg jarg)
-          (justl--util-maybe (jarg-default jarg) "")))
+          (justl-jarg-arg jarg)
+          (justl--util-maybe (justl-jarg-default jarg) "")))
 
 (defun justl--jrecipe-get-args (jrecipe)
   "Convert JRECIPE arguments to list of positional arguments."
-  (let* ((recipe-args (jrecipe-args jrecipe))
+  (let* ((recipe-args (justl-jrecipe-args jrecipe))
          (args (justl--util-maybe recipe-args (list))))
     (mapcar 'justl--arg-to-str args)))
 
@@ -170,7 +170,7 @@ out.  The search will be performed recursively."
 (defun justl--arg-to-jarg (str)
   "Convert single positional argument string STR to JARG."
   (let* ((arg (s-split "=" str)))
-    (make-jarg :arg (nth 0 arg) :default (nth 1 arg))))
+    (make-justl-jarg :arg (nth 0 arg) :default (nth 1 arg))))
 
 (defun justl--str-to-jarg (str)
   "Convert string STR to liat of JARG.
@@ -192,7 +192,7 @@ STR represents the full recipe line.  Retuns JRECIPE."
        (recipe-command (justl--get-recipe-name (nth 0 recipe-list)))
        (args-str (string-join (cdr (s-split " " (nth 0 recipe-list))) " "))
        (recipe-jargs (justl--str-to-jarg args-str)))
-    (make-jrecipe :name recipe-command :args recipe-jargs)))
+    (make-justl-jrecipe :name recipe-command :args recipe-jargs)))
 
 (defun justl--log-command (process-name cmd)
   "Log the just command to the process buffer.
@@ -281,11 +281,11 @@ CMD is the command string to run."
 (defun justl--get-jrecipies ()
   "Return list of JRECIPE."
   (let ((recipies (justl--get-recipies)))
-    (mapcar 'make-jrecipe recipies)))
+    (mapcar 'make-justl-jrecipe recipies)))
 
 (defun justl--list-to-jrecipe (list)
   "Convert a single LIST of two elements to list of JRECIPE."
-  (make-jrecipe :name (nth 0 list) :args (nth 1 list)))
+  (make-justl-jrecipe :name (nth 0 list) :args (nth 1 list)))
 
 (defun justl-exec-recipe-in-dir ()
   "Populate and execute the selected recipe."
@@ -363,7 +363,7 @@ CMD is the command string to run."
                (user-args (read-from-minibuffer "Just args: " (string-join cmd-args " "))))
           (justl--exec "just"
                        (append t-args
-                               (cons (jrecipe-name justl-recipe)
+                               (cons (justl-jrecipe-name justl-recipe)
                                      (split-string user-args " ")))))
       (justl--exec "just" (append t-args (list recipe))))))
 

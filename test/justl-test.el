@@ -14,12 +14,12 @@
 
 (ert-deftest justl--list-to-recipe-test ()
   (should (equal
-           (jrecipe-name (justl--list-to-jrecipe (list "recipe" "arg")))
+           (justl-jrecipe-name (justl--list-to-jrecipe (list "recipe" "arg")))
            "recipe"))
   (should (equal
-           (jrecipe-name (justl--list-to-jrecipe (list "recipe"))) "recipe"))
+           (justl-jrecipe-name (justl--list-to-jrecipe (list "recipe"))) "recipe"))
   (should (equal
-           (jrecipe-args (justl--list-to-jrecipe (list "recipe")))
+           (justl-jrecipe-args (justl--list-to-jrecipe (list "recipe")))
            nil)))
 
 (ert-deftest justl--recipe-has-args-test ()
@@ -30,49 +30,6 @@
              :args nil))
            nil)))
 
-(ert-deftest justl--extract-recipe-doc-test ()
-  (should (equal
-           (justl--extract-recipe-doc (list "#hello" "hello:"))
-           (list "hello:" "#hello")))
-  (should (equal (justl--extract-recipe-doc nil)
-                 nil))
-  (should (equal
-           (justl--extract-recipe-doc
-            (list "#hello" "#hi" "hello:"))
-           (list "hello:" "#hi")))
-  (should (equal
-           (justl--extract-recipe-doc
-            (list "hi"))
-           nil))
-  (should (equal
-           (justl--extract-recipe-doc
-            (list "#hello" "h" "hello:"))
-           (list "hello:")))
-  (should (equal
-           (justl--extract-recipe-doc
-            (list "hello:"))
-           (list "hello:")))
-  (should (equal
-           (justl--extract-recipe-doc
-            (list "hello:" "#hi"))
-           (list "hello:")))
-  (should (equal
-           (justl--extract-recipe-doc
-            (list "hello:" "#hi" "he2:"))
-           (list "hello:" "he2:" "#hi")))
-  (should (equal
-           (justl--extract-recipe-doc
-            (list "#hello" "h" "hello:" "#hi" "hello2:"))
-           (list "hello:" "hello2:" "#hi")))
-  (should (equal
-           (justl--extract-recipe-doc
-            (list "#hello" "h" "hello:" "#hi1" "#hi2" "#hi3" "#hi" "hello2:"))
-           (list "hello:" "hello2:" "#hi")))
-  (should (equal
-           (justl--extract-recipe-doc
-            (list "#hello" "h" "hello:" "#hi1" "#hi2" "#hi" "hello2:"))
-           (list "hello:" "hello2:" "#hi"))))
-
 (ert-deftest justl--jrecipe-get-args-test ()
   (should (equal (justl--jrecipe-get-args
                   (make-jrecipe
@@ -82,7 +39,7 @@
   (should (equal (justl--jrecipe-get-args
                   (make-jrecipe
                    :name "default"
-                   :args (list (make-jarg
+                   :args (list (make-justl-jarg
                                 :arg "version"
                                 :default "'0.4'"))))
                  (list "version='0.4'")))
@@ -90,10 +47,10 @@
                   (make-jrecipe
                    :name "default"
                    :args (list
-                          (make-jarg
+                          (make-justl-jarg
                            :arg "version1"
                            :default nil)
-                          (make-jarg
+                          (make-justl-jarg
                            :arg "version2"
                            :default nil))))
                  (list "version1=" "version2="))))
@@ -131,8 +88,8 @@
   (should (equal
            (justl--get-recipe-from-file "./justfile" "push2")
            (make-jrecipe :name "push2" :args
-                         (list (make-jarg :arg "version1" :default nil)
-                               (make-jarg :arg "version2" :default nil))))))
+                         (list (make-justl-jarg :arg "version1" :default nil)
+                               (make-justl-jarg :arg "version2" :default nil))))))
 
 (ert-deftest justl--get-recipe-name-test ()
   (should (equal
@@ -157,18 +114,18 @@
 (ert-deftest justl--str-to-jarg-test ()
   (should (equal
            (justl--str-to-jarg "version=0.4")
-           (list (make-jarg :arg "version" :default "0.4"))))
+           (list (make-justl-jarg :arg "version" :default "0.4"))))
   (should (equal
            (justl--str-to-jarg "version='0.4'")
-           (list (make-jarg :arg "version" :default "'0.4'"))))
+           (list (make-justl-jarg :arg "version" :default "'0.4'"))))
   (should (equal
            (justl--str-to-jarg "version='0.4' version2")
-           (list (make-jarg :arg "version" :default "'0.4'")
-                 (make-jarg :arg "version2" :default nil))))
+           (list (make-justl-jarg :arg "version" :default "'0.4'")
+                 (make-justl-jarg :arg "version2" :default nil))))
   (should (equal
            (justl--str-to-jarg "version version2")
-           (list (make-jarg :arg "version" :default nil)
-                 (make-jarg :arg "version2" :default nil))))
+           (list (make-justl-jarg :arg "version" :default nil)
+                 (make-justl-jarg :arg "version2" :default nil))))
   (should (equal (justl--str-to-jarg "") nil)))
 
 (ert-deftest justl--parse-recipe-test ()
@@ -180,20 +137,20 @@
            (make-jrecipe
             :name "build-cmd"
             :args (list
-                   (make-jarg
+                   (make-justl-jarg
                     :arg "version"
                     :default "'0.4'")))))
   (should (equal (justl--parse-recipe "push version version2:")
                  (make-jrecipe
                   :name "push"
-                  :args (list (make-jarg :arg "version" :default nil)
-                              (make-jarg :arg "version2" :default nil)))))
+                  :args (list (make-justl-jarg :arg "version" :default nil)
+                              (make-justl-jarg :arg "version2" :default nil)))))
   (should (equal (justl--parse-recipe "push version: (build-cmd version)")
                  (make-jrecipe
                   :name "push"
-                  :args (list (make-jarg :arg "version" :default nil))))))
+                  :args (list (make-justl-jarg :arg "version" :default nil))))))
 
-;; (ert "justl--*")
+(ert "justl--*")
 
 (provide 'justl-test)
 ;;; justl-test.el ends here

@@ -37,7 +37,7 @@ jobs:
     - name: ERT tests
       uses: leotaku/elisp-check@master
       with:
-        file: '*.el'
+        file: ./test/justl-test.el
         check: ert
         ignore_warnings: ${{ matrix.ignore_warnings }}
         warnings_as_errors: true

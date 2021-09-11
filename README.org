@@ -1,0 +1,64 @@
+* Introduction
+
+justl.el mode is a major mode for driving [[https://github.com/casey/just][justfiles]]. As compared to
+the [[https://melpa.org/#/just-mode][just-mode]], this mode is built for listing and executing the
+recipes in the justfile via the [[https://github.com/magit/transient][transient]] keymaps.
+
+todo: insert pic
+
+* Installation
+
+Right now it's not available through melpa, although you can use it
+via [[https://github.com/quelpa/quelpa][quelpa]]:
+
+#+begin_example elisp
+(use-package justl-mode
+  :quelpa (justl-mode :fetcher github
+                      :repo "psibi/justl.el")
+
+  :custom
+  (justl-recipe-width 40))
+#+end_example
+
+* Usage
+
+To list all the recipes present in your justfile, call
+
+#+begin_example elisp
+M-x justl
+#+end_example
+
+You don't have to call it from the actual justfile. Calling it from
+the directory where the justfile is present should be enough.
+
+Alternatively if you want to just execute a recipe quickly, call
+
+#+begin_example elisp
+M-x justl-execute-recipe-in-dir
+#+end_example
+
+* Shortcuts
+
+On the just screen, place your cursor on a recipe:
+
+#+begin_example
+h => help popup
+? => help popup
+g => refresh
+e => execute recipe
+#+end_example
+
+* Customize
+
+- By default, justl searches the executable named *just*, you can
+  change the /justl-executable/ variable to set any explicit path.
+- You can also control the width of the RECIPE column in the justl
+  buffer via /justl-recipe width/. By default it has a value of 20.
+
+* Future
+
+- Implement justfile variables related features.
+
+* Releases
+
+See the [[file:Changelog.org][Changelog.org]] for the list of changes.

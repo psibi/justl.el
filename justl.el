@@ -19,7 +19,7 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 ;; USA
 
-;; Version: 1.0
+;; Version: 0.1
 ;; Author: Sibi Prabakaran
 ;; Keywords: just justfile tools processes
 ;; URL: https://github.com/psibi/justl
@@ -32,7 +32,7 @@
 
 ;;; Usage:
 
-;; To list the recipes present in your justfile, call
+;; To list all the recipes present in your justfile, call
 ;;
 ;; M-x justl
 ;;
@@ -45,7 +45,7 @@
 ;;
 ;;; Shortcuts:
 
-;; On the just screen, place your cursor on a resource
+;; On the just screen, place your cursor on a recipe
 ;;
 ;; h => help popup
 ;; ? => help popup

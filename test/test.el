@@ -36,6 +36,7 @@
 (ert-deftest justl--is-recipe-line-test ()
   (should (equal (justl--is-recipe-line "default:") t))
   (should (equal (justl--is-recipe-line "build-cmd version='0.4':") t))
+  (should (equal (justl--is-recipe-line "version := 4.2") nil))
   (should (equal (justl--is-recipe-line "# Terraform plan") nil))
   (should (equal (justl--is-recipe-line "push version: (build-cmd version)") t))
   (should (equal (justl--is-recipe-line "    just --list") nil)))

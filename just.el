@@ -58,11 +58,15 @@ NAME is the buffer name."
 (defconst justl--process-buffer "*just-process*"
   "Just process buffer name.")
 
+(defun justl--is-variable (str)
+  (s-contains? ":=" str))
+
 (defun justl--is-recipe-line (str)
   "Is it a recipe line"
-  (if (string-match "\\`[ \t\n\r]+" (justl--util-maybe str ""))
-      nil
-    (s-contains? ":" (justl--util-maybe str ""))))
+  (let* ((string (justl--util-maybe str "")))
+    (if (string-match "\\`[ \t\n\r]+" string)
+        nil
+      (and (not (justl--is-variable string)) (s-contains? ":" string)))))
 
 (defun justl--is-recipe-docs (str)
   "Is it a recipe docs line"
@@ -241,7 +245,7 @@ CMD is the command string to run."
 
 (defun justl--tabulated-entries (recipies)
   "Turn to tabulated entries"
-  (map 'list (lambda (x) (list nil (vector (nth 0 x) (just--util-maybe (nth 1 x) "")))) recipies))
+  (map 'list (lambda (x) (list nil (vector (nth 0 x) (justl--util-maybe (nth 1 x) "")))) recipies))
 
 (define-transient-command justl-help-popup ()
   "Justl Menu"

@@ -1,3 +1,9 @@
+;;; package --- Summary
+
+;;; Commentary:
+
+;;; Code:
+
 (require 'justl)
 (require 'ert)
 
@@ -187,4 +193,7 @@
                   :name "push"
                   :args (list (make-jarg :arg "version" :default nil))))))
 
-(ert "justl--*")
+;; (ert "justl--*")
+
+(provide 'justl-test)
+;;; justl-test.el ends here

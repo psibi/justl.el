@@ -1,4 +1,66 @@
-;;; -*- lexical-binding: t; -*-
+;;; justl.el --- Drive just files with Emacs -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2021, Sibi Prabakaran
+
+;; This file is NOT part of Emacs.
+
+;; This  program is  free  software; you  can  redistribute it  and/or
+;; modify it  under the  terms of  the GNU  General Public  License as
+;; published by the Free Software  Foundation; either version 2 of the
+;; License, or (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT  ANY  WARRANTY;  without   even  the  implied  warranty  of
+;; MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE.   See the GNU
+;; General Public License for more details.
+
+;; You should have  received a copy of the GNU  General Public License
+;; along  with  this program;  if  not,  write  to the  Free  Software
+;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+;; USA
+
+;; Version: 1.0
+;; Author: Sibi Prabakaran
+;; Keywords: just justfile tools processes
+;; URL: https://github.com/psibi/justl
+;; License: GNU General Public License >= 3
+;; Package-Requires: ((transient "0.1.0") (emacs "25.3") (xterm-color "2.0") (s "1.2.0") (f "0.20.0"))
+
+;;; Commentary:
+
+;; Emacs extension for driving just files
+
+;;; Usage:
+
+;; To list the recipes present in your justfile, call
+;;
+;; M-x justl
+;;
+;; You don't have to call it from the actual justfile. Calling it from
+;; the directory where the justfile is present should be enough.
+;;
+;; Alternatively, if you want to just execute a recipe, call
+;;
+;; M-x justl-execute-recipe-in-dir
+;;
+;;; Shortcuts:
+
+;; On the just screen, place your cursor on a resource
+;;
+;; h => help popup
+;; ? => help popup
+;; g => refresh
+;; e => execute recipe
+
+;;; Customize:
+
+;; By default, justl searches the executable named `just`, you can
+;; change the `justl-executable` variable to set any explicit path.
+;;
+;; You can also control the width of the RECIPE column in the justl
+;; buffer via `justl-recipe width`. By default it has a value of 20.
+
+;;; Code:
 
 (require 'transient)
 (require 'cl-lib)
@@ -226,7 +288,7 @@ CMD is the command string to run."
   "Convert a single LIST of two elements to list of JRECIPE."
   (make-jrecipe :name (nth 0 list) :args (nth 1 list)))
 
-(defun justl-exec-recipie ()
+(defun justl-exec-recipe-in-dir ()
   "Populate and execute the selected recipe."
   (interactive)
   (let* ((recipies (completing-read "Recipies: " (justl--get-recipies)
@@ -285,7 +347,6 @@ CMD is the command string to run."
   "Execute just recipe.
 
 ARGS is the arguments list from transient"
-  (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
          (justfile (justl--find-justfiles default-directory))
          (justl-recipe (justl--get-recipe-from-file (car justfile) recipe))
@@ -328,19 +389,17 @@ ARGS is the arguments list from transient"
   (use-local-map justl-mode-map)
   (let ((justfiles (justl--find-justfiles default-directory))
         (entries (justl--get-recipies-with-desc)))
-    (message (format "test %s" entries))
-    (message (format "test2  %s" (justl--tabulated-entries entries)))
     (if (null justfiles)
         (message "No justfiles found")
       (progn
-        (setq tabulated-list-format [("RECIPIES" 20 t) ("DESCRIPTION" 20 t)])
+        (setq tabulated-list-format [("RECIPIES" justl-recipe-width t) ("DESCRIPTION" 20 t)])
         (setq tabulated-list-entries (justl--tabulated-entries entries))
         (setq tabulated-list-sort-key justl--list-sort-key)
         (setq tabulated-list-sort-key nil)
         (tabulated-list-init-header)
         (tabulated-list-print t)
         (hl-line-mode 1)
-        (message (concat "Just: " default-directory))
+ (message (concat "Just: " default-directory))
         (run-mode-hooks 'justl-mode-hook)))))
 
 (add-hook 'justl-mode-hook #'justl--jump-back-to-line)

@@ -27,6 +27,7 @@ jobs:
       run: |
         set -ex
         curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin/just
+        echo $PATH
         just --version
     - uses: purcell/setup-emacs@master
       with:

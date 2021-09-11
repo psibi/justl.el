@@ -84,7 +84,8 @@
 (defcustom justl-recipe-width 20
   "Width of the recipe column."
   :type 'integer
-  :group 'justl)
+  :group 'justl
+  :safe 'string)
 
 (cl-defstruct jrecipe name args)
 (cl-defstruct jarg arg default)
@@ -329,7 +330,10 @@ CMD is the command string to run."
 (define-transient-command justl-help-popup ()
   "Justl Menu"
   [["Arguments"
-    ("-d" "Dry run" "--dry-run")]
+    ("-d" "Dry run" "--dry-run")
+    ("-n" "Don't load .env file" "--no-dotenv")
+    ("-q" "Quiet" "--quiet")
+    ]
    ["Actions"
     ;; global
     ("g" "Refresh" justl)
@@ -347,6 +351,7 @@ CMD is the command string to run."
   "Execute just recipe.
 
 ARGS is the arguments list from transient"
+  (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
          (justfile (justl--find-justfiles default-directory))
          (justl-recipe (justl--get-recipe-from-file (car justfile) recipe))
@@ -392,7 +397,7 @@ ARGS is the arguments list from transient"
     (if (null justfiles)
         (message "No justfiles found")
       (progn
-        (setq tabulated-list-format [("RECIPIES" justl-recipe-width t) ("DESCRIPTION" 20 t)])
+        (setq tabulated-list-format [("RECIPIES" 20 t) ("DESCRIPTION" 20 t)])
         (setq tabulated-list-entries (justl--tabulated-entries entries))
         (setq tabulated-list-sort-key justl--list-sort-key)
         (setq tabulated-list-sort-key nil)

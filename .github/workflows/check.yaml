@@ -20,9 +20,6 @@ jobs:
           - 26.3
         ignore_warnings:
           - false
-        include:
-          - emacs_version: snapshot
-            ignore_warnings: false
     steps:
     - uses: actions/checkout@v2
     - name: Install just
@@ -30,6 +27,7 @@ jobs:
       run: |
         set -ex
         curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin/just
+        just --version
     - uses: purcell/setup-emacs@master
       with:
         version: ${{ matrix.emacs_version }}
@@ -37,5 +35,12 @@ jobs:
       with:
         file: '*.el'
         check: melpa
+        ignore_warnings: ${{ matrix.ignore_warnings }}
+        warnings_as_errors: true
+    - name: ERT tests
+      uses: leotaku/elisp-check@master
+      with:
+        file: '*.el'
+        check: ert
         ignore_warnings: ${{ matrix.ignore_warnings }}
         warnings_as_errors: true

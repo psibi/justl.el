@@ -15,12 +15,13 @@ Right now it's not available through melpa, although you can use it
 via [[https://github.com/quelpa/quelpa][quelpa]]:
 
 #+begin_example elisp
-(use-package justl-mode
-  :quelpa (justl-mode :fetcher github
-                      :repo "psibi/justl.el")
+(use-package justl
+  :quelpa (justl :fetcher github
+                 :repo "psibi/justl.el")
 
   :custom
-  (justl-recipe-width 40))
+  (justl-executable "/home/sibi/bin/just")
+  (justl-recipe-width 25))
 #+end_example
 
 * Usage

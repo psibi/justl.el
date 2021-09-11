@@ -84,8 +84,7 @@
 (defcustom justl-recipe-width 20
   "Width of the recipe column."
   :type 'integer
-  :group 'justl
-  :safe 'string)
+  :group 'justl)
 
 (cl-defstruct jrecipe name args)
 (cl-defstruct jarg arg default)
@@ -397,7 +396,9 @@ ARGS is the arguments list from transient"
     (if (null justfiles)
         (message "No justfiles found")
       (progn
-        (setq tabulated-list-format [("RECIPIES" 20 t) ("DESCRIPTION" 20 t)])
+        (setq tabulated-list-format
+              (vector (list "RECIPIES" justl-recipe-width t)
+                      (list "DESCRIPTION" 20 t)))
         (setq tabulated-list-entries (justl--tabulated-entries entries))
         (setq tabulated-list-sort-key justl--list-sort-key)
         (setq tabulated-list-sort-key nil)

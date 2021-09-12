@@ -403,7 +403,6 @@ CMD is the command string to run."
               (vector (list "RECIPIES" justl-recipe-width t)
                       (list "DESCRIPTION" 20 t)))
         (setq tabulated-list-entries (justl--tabulated-entries entries))
-        (setq tabulated-list-sort-key justl--list-sort-key)
         (setq tabulated-list-sort-key nil)
         (tabulated-list-init-header)
         (tabulated-list-print t)
@@ -412,10 +411,6 @@ CMD is the command string to run."
         (run-mode-hooks 'justl-mode-hook)))))
 
 (add-hook 'justl-mode-hook #'justl--jump-back-to-line)
-
-(defconst justl--list-sort-key
-  '("Recipies" . nil)
-  "Sort table on this key.")
 
 (provide 'justl)
 ;;; justl.el ends here

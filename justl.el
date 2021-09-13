@@ -19,7 +19,7 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 ;; USA
 
-;; Version: 0.1
+;; Version: 0.2
 ;; Author: Sibi Prabakaran
 ;; Keywords: just justfile tools processes
 ;; URL: https://github.com/psibi/justl
@@ -29,14 +29,12 @@
 ;;; Commentary:
 
 ;; Emacs extension for driving just files
-
-;;; Usage:
-
+;;
 ;; To list all the recipes present in your justfile, call
 ;;
 ;; M-x justl
 ;;
-;; You don't have to call it from the actual justfile. Calling it from
+;; You don't have to call it from the actual justfile.  Calling it from
 ;; the directory where the justfile is present should be enough.
 ;;
 ;; Alternatively, if you want to just execute a recipe, call
@@ -91,7 +89,7 @@
 
 (defun justl--jrecipe-has-args-p (jrecipe)
   "Check if JRECIPE has any arguments."
-  (not (null (justl-jrecipe-args jrecipe))))
+  (justl-jrecipe-args jrecipe))
 
 (defun justl--util-maybe (maybe default)
   "Return the DEFAULT value if MAYBE is null.
@@ -111,7 +109,7 @@ Similar to the fromMaybe function in the Haskell land."
   "Convert JRECIPE arguments to list of positional arguments."
   (let* ((recipe-args (justl-jrecipe-args jrecipe))
          (args (justl--util-maybe recipe-args (list))))
-    (mapcar 'justl--arg-to-str args)))
+    (mapcar #'justl--arg-to-str args)))
 
 (defun justl--process-error-buffer (process-name)
   "Return the error buffer name for the PROCESS-NAME."
@@ -179,7 +177,7 @@ The string after the recipe name and before the build constraints
 is expected."
   (if (and (not (s-blank? str)) str)
       (let* ((args (s-split " " str)))
-        (mapcar 'justl--arg-to-jarg args))
+        (mapcar #'justl--arg-to-jarg args))
       nil))
 
 
@@ -213,7 +211,7 @@ CMD is the just command as a list."
        (let ((err (with-current-buffer (justl--process-error-buffer process-name)
                  (buffer-string))))
       (justl--append-to-process-buffer (format "error: %s" err))
-      (error (format "just process %s error: %s" process-name err))))))
+      (error "Just process %s error: %s" process-name err)))))
 
 (defun justl--xterm-color-filter (proc string)
   "Filter function for PROC handling colors.
@@ -265,7 +263,7 @@ CMD is the command string to run."
   (let ((recipies (split-string (justl--exec-to-string
                                  (format "%s --summary --unsorted"
                                          justl-executable)))))
-    (mapcar 'string-trim-right recipies)))
+    (mapcar #'string-trim-right recipies)))
 
 (defun justl--get-recipies-with-desc ()
   "Return all the recipies with description."
@@ -281,7 +279,7 @@ CMD is the command string to run."
 (defun justl--get-jrecipies ()
   "Return list of JRECIPE."
   (let ((recipies (justl--get-recipies)))
-    (mapcar 'make-justl-jrecipe recipies)))
+    (mapcar #'make-justl-jrecipe recipies)))
 
 (defun justl--list-to-jrecipe (list)
   "Convert a single LIST of two elements to list of JRECIPE."
@@ -346,7 +344,7 @@ CMD is the command string to run."
   "Get specific RECIPE from the FILENAME."
   (let* ((jcontent (f-read-text filename))
          (recipe-lines (split-string jcontent "\n"))
-         (all-recipe (seq-filter 'justl--is-recipe-line-p recipe-lines))
+         (all-recipe (seq-filter #'justl--is-recipe-line-p recipe-lines))
          (current-recipe (seq-filter (lambda (x) (s-contains? recipe x)) all-recipe)))
     (justl--parse-recipe (car current-recipe))))
 
@@ -389,28 +387,21 @@ CMD is the command string to run."
 (define-derived-mode justl-mode tabulated-list-mode  "Justl"
   "Special mode for justl buffers."
   (buffer-disable-undo)
-  (kill-all-local-variables)
   (setq truncate-lines t)
-  (setq mode-name "Justl")
-  (setq major-mode 'justl-mode)
-  (use-local-map justl-mode-map)
   (let ((justfiles (justl--find-justfiles default-directory))
         (entries (justl--get-recipies-with-desc)))
     (if (null justfiles)
         (message "No justfiles found")
-      (progn
-        (setq tabulated-list-format
-              (vector (list "RECIPIES" justl-recipe-width t)
-                      (list "DESCRIPTION" 20 t)))
-        (setq tabulated-list-entries (justl--tabulated-entries entries))
-        (setq tabulated-list-sort-key nil)
-        (tabulated-list-init-header)
-        (tabulated-list-print t)
-        (hl-line-mode 1)
- (message (concat "Just: " default-directory))
-        (run-mode-hooks 'justl-mode-hook)))))
-
-(add-hook 'justl-mode-hook #'justl--jump-back-to-line)
+      (setq tabulated-list-format
+            (vector (list "RECIPIES" justl-recipe-width t)
+                    (list "DESCRIPTION" 20 t)))
+      (setq tabulated-list-entries (justl--tabulated-entries entries))
+      (setq tabulated-list-sort-key nil)
+      (tabulated-list-init-header)
+      (tabulated-list-print t)
+      (hl-line-mode 1)
+      (message (concat "Just: " default-directory))
+      (justl--jump-back-to-line))))
 
 (provide 'justl)
 ;;; justl.el ends here

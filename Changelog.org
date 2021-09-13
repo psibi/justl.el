@@ -1,3 +1,9 @@
 * 0.1
 
 - Initial version released
+
+* 0.2
+
+- Address various comments from the melpa maintainers.
+- Use sharp quotes *#'* to provide hints to the byte compiler which
+  will warn if the function is undefined.

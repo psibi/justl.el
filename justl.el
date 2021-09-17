@@ -108,7 +108,7 @@ Similar to the fromMaybe function in the Haskell land."
 (defun justl--jrecipe-get-args (jrecipe)
   "Convert JRECIPE arguments to list of positional arguments."
   (let* ((recipe-args (justl-jrecipe-args jrecipe))
-         (args (justl--util-maybe recipe-args (list))))
+         (args (justl--util-maybe recipe-args nil)))
     (mapcar #'justl--arg-to-str args)))
 
 (defun justl--process-error-buffer (process-name)
@@ -357,12 +357,14 @@ CMD is the command string to run."
          (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
     (if recipe-has-args
-        (let* ((cmd-args (justl--jrecipe-get-args justl-recipe))
-               (user-args (read-from-minibuffer "Just args: " (string-join cmd-args " "))))
+        (let* ((cmd-args (justl-jrecipe-args justl-recipe))
+               (user-args (mapcar (lambda (arg) (read-from-minibuffer
+                                                 (format "Just arg for %s:" (justl-jarg-arg arg))
+                                                 (justl--util-maybe (justl-jarg-default arg) "")))
+                                  cmd-args)))
           (justl--exec "just"
                        (append t-args
-                               (cons (justl-jrecipe-name justl-recipe)
-                                     (split-string user-args " ")))))
+                               (cons (justl-jrecipe-name justl-recipe) user-args))))
       (justl--exec "just" (append t-args (list recipe))))))
 
 (defun justl--get-word-under-cursor ()

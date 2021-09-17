@@ -62,6 +62,9 @@ e => execute recipe
 * Future
 
 - Implement justfile variables related features.
+- Implement going to justfile on enter
+- Implement another function for supplying positional arguments
+- Fix variable interpolation feature
 
 * Releases
 

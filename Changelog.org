@@ -12,6 +12,9 @@ push2 version1 version2:
 It will ask the values for both version1 and version2 explicitly in
 the above case.
 
+- Implement *justl--exec-recipe-with-args* to provide explicit
+  arguments to it. It's shortcut in *justl* buffer is *w*.
+
 * 0.2
 
 - Address various comments from the melpa maintainers.

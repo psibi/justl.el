@@ -12,7 +12,7 @@ build-cmd version='0.4':
 plan:
     echo "plan"
 
-push version: (build-cmd version)
+@push version: (build-cmd version)
     echo {{version}}
 
 push2 version1 version2:

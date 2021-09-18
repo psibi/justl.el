@@ -294,11 +294,11 @@ CMD is the command string to run."
 
 (defvar justl-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "l") 'justl-list-recipies)
     (define-key map (kbd "g") 'justl)
     (define-key map (kbd "e") 'justl-exec-recipe)
     (define-key map (kbd "?") 'justl-help-popup)
     (define-key map (kbd "h") 'justl-help-popup)
+    (define-key map (kbd "w") 'justl--exec-recipe-with-args)
     map)
   "Keymap for `justl-mode'.")
 
@@ -337,7 +337,9 @@ CMD is the command string to run."
    ["Actions"
     ;; global
     ("g" "Refresh" justl)
-    ("e" "Exec" justl-exec-recipe)]
+    ("e" "Exec" justl-exec-recipe)
+    ("w" "Exec with args" justl--exec-recipe-with-args)
+    ]
    ])
 
 (defun justl--get-recipe-from-file (filename recipe)
@@ -366,6 +368,22 @@ CMD is the command string to run."
                        (append t-args
                                (cons (justl-jrecipe-name justl-recipe) user-args))))
       (justl--exec "just" (append t-args (list recipe))))))
+
+(defun justl--exec-recipe-with-args ()
+  "Execute just recipe with arguments."
+  (interactive)
+  (let* ((recipe (justl--get-word-under-cursor))
+         (justfile (justl--find-justfiles default-directory))
+         (justl-recipe (justl--get-recipe-from-file (car justfile) recipe))
+         (t-args (transient-args 'justl-help-popup))
+         (user-args (read-from-minibuffer
+                     (format "Arguments seperated by spaces:"))))
+    (justl--exec
+     "just"
+     (append t-args
+             (cons
+              (justl-jrecipe-name justl-recipe)
+              (split-string user-args " "))))))
 
 (defun justl--get-word-under-cursor ()
   "Utility function to get the name of the recipe under the cursor."

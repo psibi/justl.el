@@ -180,6 +180,13 @@ is expected."
         (mapcar #'justl--arg-to-jarg args))
       nil))
 
+(defun justl--process-recipe-name (str)
+  "Process and perform transformation on recipe name.
+
+STR reprents the recipe name.  Returns processed recipe name."
+  (if (s-starts-with? "@" str)
+      (s-chop-prefix "@" str)
+    str))
 
 (defun justl--parse-recipe (str)
   "Parse a entire recipe line.
@@ -190,7 +197,8 @@ STR represents the full recipe line.  Retuns JRECIPE."
        (recipe-command (justl--get-recipe-name (nth 0 recipe-list)))
        (args-str (string-join (cdr (s-split " " (nth 0 recipe-list))) " "))
        (recipe-jargs (justl--str-to-jarg args-str)))
-    (make-justl-jrecipe :name recipe-command :args recipe-jargs)))
+    (make-justl-jrecipe :name (justl--process-recipe-name recipe-command)
+                        :args recipe-jargs)))
 
 (defun justl--log-command (process-name cmd)
   "Log the just command to the process buffer.
@@ -299,7 +307,7 @@ CMD is the command string to run."
     (define-key map (kbd "?") 'justl-help-popup)
     (define-key map (kbd "h") 'justl-help-popup)
     (define-key map (kbd "w") 'justl--exec-recipe-with-args)
-    (define-key map (kbd "RET") 'justl--go-to-recipe)
+    (define-key map (kbd "RET") 'justl-go-to-recipe)
     map)
   "Keymap for `justl-mode'.")
 
@@ -340,7 +348,7 @@ CMD is the command string to run."
     ("g" "Refresh" justl)
     ("e" "Exec" justl-exec-recipe)
     ("w" "Exec with args" justl--exec-recipe-with-args)
-    ("RET" "Go to recipe" justl--go-to-recipe)
+    ("RET" "Go to recipe" justl-go-to-recipe)
     ]
    ])
 

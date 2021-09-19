@@ -86,10 +86,14 @@
            (justl--get-recipe-from-file "./justfile" "plan")
            (make-justl-jrecipe :name "plan" :args nil)))
   (should (equal
+           (justl--get-recipe-from-file "./justfile" "push")
+           (make-justl-jrecipe :name "push" :args
+                               (list (make-justl-jarg :arg "version" :default nil)))))
+  (should (equal
            (justl--get-recipe-from-file "./justfile" "push2")
            (make-justl-jrecipe :name "push2" :args
-                         (list (make-justl-jarg :arg "version1" :default nil)
-                               (make-justl-jarg :arg "version2" :default nil))))))
+                               (list (make-justl-jarg :arg "version1" :default nil)
+                                     (make-justl-jarg :arg "version2" :default nil))))))
 
 (ert-deftest justl--get-recipe-name-test ()
   (should (equal

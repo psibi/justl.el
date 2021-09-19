@@ -1,5 +1,7 @@
 * 0.3 (Unreleased)
 
+- Handle recipe names starting with /@/
+
 - Add *justl-go-to-recipe* function which will take you to the
   justfile where the recipe under the cursor is present. It's default
   key binding is *RET*

@@ -63,6 +63,7 @@ w => execute recipe with arguments
 * Future
 
 - Implement justfile variables related features.
+- Implemen exec with eshell
 
 * Releases
 

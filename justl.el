@@ -299,6 +299,7 @@ CMD is the command string to run."
     (define-key map (kbd "?") 'justl-help-popup)
     (define-key map (kbd "h") 'justl-help-popup)
     (define-key map (kbd "w") 'justl--exec-recipe-with-args)
+    (define-key map (kbd "RET") 'justl--go-to-recipe)
     map)
   "Keymap for `justl-mode'.")
 
@@ -339,6 +340,7 @@ CMD is the command string to run."
     ("g" "Refresh" justl)
     ("e" "Exec" justl-exec-recipe)
     ("w" "Exec with args" justl--exec-recipe-with-args)
+    ("RET" "Go to recipe" justl--go-to-recipe)
     ]
    ])
 
@@ -384,6 +386,20 @@ CMD is the command string to run."
              (cons
               (justl-jrecipe-name justl-recipe)
               (split-string user-args " "))))))
+
+(defun justl-go-to-recipe ()
+  "Go to the recipe on justfile."
+  (interactive)
+  (let* ((recipe (justl--get-word-under-cursor))
+         (justfile (justl--find-justfiles default-directory))
+         (justl-recipe (justl--get-recipe-from-file (car justfile) recipe)))
+    (progn
+      (find-file (car justfile))
+      (goto-char 0)
+      (when (re-search-forward (concat (justl-jrecipe-name justl-recipe) ".*:") nil t 1)
+        (let ((start (point)))
+          (goto-char start)
+          (goto-char (line-beginning-position)))))))
 
 (defun justl--get-word-under-cursor ()
   "Utility function to get the name of the recipe under the cursor."

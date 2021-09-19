@@ -63,7 +63,6 @@ w => execute recipe with arguments
 * Future
 
 - Implement justfile variables related features.
-- Implement going to justfile on enter
 
 * Releases
 

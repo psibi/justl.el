@@ -1,5 +1,9 @@
 * 0.3 (Unreleased)
 
+- Add *justl-go-to-recipe* function which will take you to the
+  justfile where the recipe under the cursor is present. It's default
+  key binding is *RET*
+
 - Change behaviour of executing recipes. It now reads the recipe to
   see if it has any input parameters and asks the value explicitly
   along with some smart behavior for default values. Eg:

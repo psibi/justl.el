@@ -63,6 +63,7 @@
 (require 'transient)
 (require 'cl-lib)
 (require 'xterm-color)
+(require 'eshell)
 (require 's)
 (require 'f)
 
@@ -307,6 +308,7 @@ CMD is the command string to run."
     (define-key map (kbd "?") 'justl-help-popup)
     (define-key map (kbd "h") 'justl-help-popup)
     (define-key map (kbd "w") 'justl--exec-recipe-with-args)
+    (define-key map (kbd "E") 'justl-exec-eshell)
     (define-key map (kbd "RET") 'justl-go-to-recipe)
     map)
   "Keymap for `justl-mode'.")
@@ -330,7 +332,42 @@ CMD is the command string to run."
   "Turn RECIPIES to tabulated entries."
   (mapcar (lambda (x)
                (list nil (vector (nth 0 x) (justl--util-maybe (nth 1 x) ""))))
-       recipies))
+          recipies))
+
+(defun justl--no-exec-with-eshell (recipe)
+  "Opens eshell buffer but does not execute it.
+Populates the eshell buffer with RECIPE name so that it can be
+tweaked further by the user."
+  (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe)))
+    (progn
+      (eshell)
+      (insert (format "just %s" recipe)))))
+
+(defun justl--exec-with-eshell (recipe)
+  "Opens eshell buffer and execute the just RECIPE."
+  (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe)))
+    (progn
+      (eshell)
+      (eshell-command (format "%s %s" justl-executable recipe) t))))
+
+(defun justl-exec-eshell ()
+  "Execute just recipe in eshell."
+  (interactive)
+  (let* ((recipe (justl--get-word-under-cursor))
+         (justfile (justl--find-justfiles default-directory))
+         (justl-recipe (justl--get-recipe-from-file (car justfile) recipe))
+         (t-args (transient-args 'justl-help-popup))
+         (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
+    (if recipe-has-args
+        (let* ((cmd-args (justl-jrecipe-args justl-recipe))
+               (user-args (mapcar (lambda (arg)
+                                    (format "Just arg for %s:" (justl--util-maybe (justl-jarg-default arg) "")))
+                                  cmd-args)))
+          (justl--no-exec-with-eshell
+           (string-join (append t-args
+                                (cons (justl-jrecipe-name justl-recipe) user-args)) " ")))
+      (justl--exec-with-eshell
+       (string-join (append t-args (list recipe)) " ")))))
 
 (define-transient-command justl-help-popup ()
   "Justl Menu"
@@ -347,6 +384,7 @@ CMD is the command string to run."
     ;; global
     ("g" "Refresh" justl)
     ("e" "Exec" justl-exec-recipe)
+    ("E" "Exec with eshell" justl-exec-eshell)
     ("w" "Exec with args" justl--exec-recipe-with-args)
     ("RET" "Go to recipe" justl-go-to-recipe)
     ]

@@ -348,6 +348,7 @@ tweaked further by the user."
   (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe)))
     (progn
       (eshell)
+      (insert (format "just %s\n" recipe))
       (eshell-command (format "%s %s" justl-executable recipe) t))))
 
 (defun justl-exec-eshell ()
@@ -361,7 +362,7 @@ tweaked further by the user."
     (if recipe-has-args
         (let* ((cmd-args (justl-jrecipe-args justl-recipe))
                (user-args (mapcar (lambda (arg)
-                                    (format "Just arg for %s:" (justl--util-maybe (justl-jarg-default arg) "")))
+                                    (format "%s " (justl--util-maybe (justl-jarg-default arg) "")))
                                   cmd-args)))
           (justl--no-exec-with-eshell
            (string-join (append t-args
@@ -449,8 +450,7 @@ tweaked further by the user."
 
 (defun justl--get-word-under-cursor ()
   "Utility function to get the name of the recipe under the cursor."
-  (replace-regexp-in-string
-   "^" "" (aref (tabulated-list-get-entry) 0)))
+  (aref (tabulated-list-get-entry) 0))
 
 (defun justl--jump-back-to-line ()
   "Jump back to the last cached line number."

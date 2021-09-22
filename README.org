@@ -65,7 +65,6 @@ W => open eshell without executing
 * Future
 
 - Implement justfile variables related features.
-- Github action release integration
 
 * Releases
 

@@ -41,3 +41,9 @@ jobs:
         check: ert
         ignore_warnings: ${{ matrix.ignore_warnings }}
         warnings_as_errors: true
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        body_path: Changelog.org
+        token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}

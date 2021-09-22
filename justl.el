@@ -389,17 +389,25 @@ tweaked further by the user."
       (justl--no-exec-with-eshell
        (string-join (append t-args (list recipe)) " ")))))
 
+(transient-define-argument justl--color ()
+  :description "Color output"
+  :class 'transient-switches
+  :key "-c"
+  :argument-format "--color %s"
+  :argument-regexp "\\(--color \\(auto\\|always\\|never\\)\\)"
+  :choices '("auto" "always" "never"))
+
 (define-transient-command justl-help-popup ()
   "Justl Menu"
   [["Arguments"
-    ("-c" "Clear shell arguments" "--clear-shell-args")
+    ("-s" "Clear shell arguments" "--clear-shell-args")
     ("-d" "Dry run" "--dry-run")
     ("-e" "Disable .env file" "--no-dotenv")
     ("-h" "Highlight" "--highlight")
     ("-n" "Disable Highlight" "--no-highlight")
     ("-q" "Quiet" "--quiet")
     ("-v" "Verbose output" "--verbose")
-
+    (justl--color)
     ]
    ["Actions"
     ;; global

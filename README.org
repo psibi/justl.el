@@ -65,9 +65,7 @@ W => open eshell without executing
 * Future
 
 - Implement justfile variables related features.
-- Add option for disabling colors
 - Github action release integration
-- Implemen exec with eshell (On progress)
 
 * Releases
 

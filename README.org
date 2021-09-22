@@ -50,7 +50,9 @@ h => help popup
 ? => help popup
 g => refresh
 e => execute recipe
+E => execute recipe with eshell
 w => execute recipe with arguments
+W => open eshell without executing
 #+end_example
 
 * Customize
@@ -64,6 +66,7 @@ w => execute recipe with arguments
 
 - Implement justfile variables related features.
 - Add option for disabling colors
+- Github action release integration
 - Implemen exec with eshell (On progress)
 
 * Releases

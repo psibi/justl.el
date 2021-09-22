@@ -1,5 +1,10 @@
 * 0.3 (Unreleased)
 
+- Integration with eshell done. You can now execute the recipies in
+  either eshell or open eshell and give positional arguments etc for
+  the recipe before executing it. The key binding for it is *E* and
+  *W*.
+
 - Handle recipe names starting with /@/
 
 - Add *justl-go-to-recipe* function which will take you to the

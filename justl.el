@@ -370,6 +370,25 @@ tweaked further by the user."
       (justl--exec-with-eshell
        (string-join (append t-args (list recipe)) " ")))))
 
+(defun justl-no-exec-eshell ()
+  "Open eshell with the recipe but do not execute it."
+  (interactive)
+  (let* ((recipe (justl--get-word-under-cursor))
+         (justfile (justl--find-justfiles default-directory))
+         (justl-recipe (justl--get-recipe-from-file (car justfile) recipe))
+         (t-args (transient-args 'justl-help-popup))
+         (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
+    (if recipe-has-args
+        (let* ((cmd-args (justl-jrecipe-args justl-recipe))
+               (user-args (mapcar (lambda (arg)
+                                    (format "%s " (justl--util-maybe (justl-jarg-default arg) "")))
+                                  cmd-args)))
+          (justl--no-exec-with-eshell
+           (string-join (append t-args
+                                (cons (justl-jrecipe-name justl-recipe) user-args)) " ")))
+      (justl--no-exec-with-eshell
+       (string-join (append t-args (list recipe)) " ")))))
+
 (define-transient-command justl-help-popup ()
   "Justl Menu"
   [["Arguments"
@@ -380,6 +399,7 @@ tweaked further by the user."
     ("-n" "Disable Highlight" "--no-highlight")
     ("-q" "Quiet" "--quiet")
     ("-v" "Verbose output" "--verbose")
+
     ]
    ["Actions"
     ;; global
@@ -387,6 +407,7 @@ tweaked further by the user."
     ("e" "Exec" justl-exec-recipe)
     ("E" "Exec with eshell" justl-exec-eshell)
     ("w" "Exec with args" justl--exec-recipe-with-args)
+    ("W" "Open eshell with args" justl-no-exec-eshell)
     ("RET" "Go to recipe" justl-go-to-recipe)
     ]
    ])

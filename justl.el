@@ -64,6 +64,7 @@
 (require 'cl-lib)
 (require 'xterm-color)
 (require 'eshell)
+(require 'esh-mode)
 (require 's)
 (require 'f)
 

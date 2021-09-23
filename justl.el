@@ -305,10 +305,11 @@ CMD is the command string to run."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "g") 'justl)
     (define-key map (kbd "e") 'justl-exec-recipe)
+    (define-key map (kbd "E") 'justl-exec-eshell)
     (define-key map (kbd "?") 'justl-help-popup)
     (define-key map (kbd "h") 'justl-help-popup)
     (define-key map (kbd "w") 'justl--exec-recipe-with-args)
-    (define-key map (kbd "E") 'justl-exec-eshell)
+    (define-key map (kbd "W") 'justl-no-exec-eshell)
     (define-key map (kbd "RET") 'justl-go-to-recipe)
     map)
   "Keymap for `justl-mode'.")
@@ -348,8 +349,8 @@ tweaked further by the user."
   (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe)))
     (progn
       (eshell)
-      (insert (format "just %s\n" recipe))
-      (eshell-command (format "%s %s" justl-executable recipe) t))))
+      (insert (format "just %s" recipe))
+      (eshell-send-input))))
 
 (defun justl-exec-eshell ()
   "Execute just recipe in eshell."

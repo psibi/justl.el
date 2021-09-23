@@ -2,7 +2,7 @@ test-variable := "0.2.7"
 
 # List all recipies
 default:
-    just --list
+    just --list --color never
 
 # Build command
 build-cmd version='0.4':

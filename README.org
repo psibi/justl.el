@@ -1,6 +1,5 @@
 # NOTE: To avoid having this in the info manual, we use HTML rather than Org syntax; it still appears with the GitHub renderer.
-#+HTML: <a href="https://github.com/psibi/justl.el/actions"><img src="https://github.com/psibi/justl.el/actions/workflows/check.yaml/badge.svg"></a>
-[[https://melpa.org/#/justl][file:https://melpa.org/packages/justl-badge.svg]]
+#+HTML: <a href="https://github.com/psibi/justl.el/actions"><img src="https://github.com/psibi/justl.el/actions/workflows/check.yaml/badge.svg"></a> <a href="https://melpa.org/#/justl"><img alt="MELPA" src="https://melpa.org/packages/justl-badge.svg"/></a>
 
 * Introduction
 

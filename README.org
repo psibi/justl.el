@@ -1,5 +1,6 @@
 # NOTE: To avoid having this in the info manual, we use HTML rather than Org syntax; it still appears with the GitHub renderer.
 #+HTML: <a href="https://github.com/psibi/justl.el/actions"><img src="https://github.com/psibi/justl.el/actions/workflows/check.yaml/badge.svg"></a>
+[[https://melpa.org/#/justl][file:https://melpa.org/packages/justl-badge.svg]]
 
 * Introduction
 
@@ -11,8 +12,16 @@ recipes in the justfile via the [[https://magit.vc/manual/transient][transient]]
 
 * Installation
 
-Right now it's not available through melpa, although you can use it
-via [[https://github.com/quelpa/quelpa][quelpa]]:
+It's available via [[https://melpa.org/#/justl][melpa]] and can be installed through [[https://github.com/jwiegley/use-package][use-package]]:
+
+#+begin_example elisp
+(use-package justl
+  :ensure t
+  :custom
+  (justl-executable "/home/sibi/bin/just"))
+#+end_example
+
+Optionally you can install it via [[https://github.com/quelpa/quelpa][quelpa]] too:
 
 #+begin_example elisp
 (use-package justl
@@ -65,6 +74,7 @@ W => open eshell without executing
 * Future
 
 - Implement justfile variables related features.
+- Check for error handling
 
 * Releases
 

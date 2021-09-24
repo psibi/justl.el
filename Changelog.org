@@ -1,4 +1,4 @@
-* 0.3 (Unreleased)
+* 0.3
 
 - Add ability to turn off color in the output. Useful for eshell
   integration which doesn't recognize color without additional setup.

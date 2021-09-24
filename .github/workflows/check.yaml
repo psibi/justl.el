@@ -48,4 +48,3 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         body_path: Changelog.org
-        token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}

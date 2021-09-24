@@ -1,9 +1,40 @@
-* 0.1
+* 0.3 (Unreleased)
 
-- Initial version released
+- Add ability to turn off color in the output. Useful for eshell
+  integration which doesn't recognize color without additional setup.
+
+- Integration with eshell done. You can now execute the recipies in
+  either eshell or open eshell and give positional arguments etc for
+  the recipe before executing it. The key binding for it is *E* and
+  *W*.
+
+- Handle recipe names starting with /@/
+
+- Add *justl-go-to-recipe* function which will take you to the
+  justfile where the recipe under the cursor is present. It's default
+  key binding is *RET*
+
+- Change behaviour of executing recipes. It now reads the recipe to
+  see if it has any input parameters and asks the value explicitly
+  along with some smart behavior for default values. Eg:
+
+#+begin_example just
+push2 version1 version2:
+    echo {{version1}} {{version2}}
+#+end_example
+
+It will ask the values for both version1 and version2 explicitly in
+the above case.
+
+- Implement *justl--exec-recipe-with-args* to provide explicit
+  arguments to it. It's shortcut in *justl* buffer is *w*.
 
 * 0.2
 
 - Address various comments from the melpa maintainers.
 - Use sharp quotes *#'* to provide hints to the byte compiler which
   will warn if the function is undefined.
+
+* 0.1
+
+- Initial version released

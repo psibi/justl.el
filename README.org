@@ -50,6 +50,9 @@ h => help popup
 ? => help popup
 g => refresh
 e => execute recipe
+E => execute recipe with eshell
+w => execute recipe with arguments
+W => open eshell without executing
 #+end_example
 
 * Customize

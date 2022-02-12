@@ -10,7 +10,7 @@ build-cmd version='0.4':
 
 # Terraform plan
 plan:
-    echo "plan"
+    echo "planner"
 
 @push version: (build-cmd version)
     echo {{version}}

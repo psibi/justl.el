@@ -130,6 +130,9 @@ NAME is the buffer name."
 (defconst justl--process-buffer "*just-process*"
   "Just process buffer name.")
 
+(defconst justl--output-process-buffer "*just*"
+  "Just output process buffer name.")
+
 (defun justl--is-variable-p (str)
   "Check if string STR is a just variable."
   (s-contains? ":=" str))
@@ -217,11 +220,14 @@ CMD is the just command as a list."
   (let ((process-name (process-name process))
         (exit-status (process-exit-status process)))
     (justl--append-to-process-buffer (format "[%s]\nexit-code: %s" process-name exit-status))
+    (with-current-buffer (get-buffer justl--output-process-buffer)
+      (goto-char (point-max))
+      (insert (format "\nFinished execution: exit-code %s" exit-status)))
     (unless (eq 0 exit-status)
-       (let ((err (with-current-buffer (justl--process-error-buffer process-name)
-                 (buffer-string))))
-      (justl--append-to-process-buffer (format "error: %s" err))
-      (error "Just process %s error: %s" process-name err)))))
+      (let ((err (with-current-buffer (justl--process-error-buffer process-name)
+                   (buffer-string))))
+        (justl--append-to-process-buffer (format "error: %s" err))
+        (error "Just process %s error: %s" process-name err)))))
 
 (defun justl--xterm-color-filter (proc string)
   "Filter function for PROC handling colors.
@@ -244,7 +250,7 @@ PROCESS-NAME is an identifier for the process.  Default to \"just\".
 ARGS is a ist of arguments."
   (when (equal process-name "")
     (setq process-name "just"))
-  (let ((buffer-name (format "*%s*" process-name))
+  (let ((buffer-name justl--output-process-buffer)
         (error-buffer (justl--process-error-buffer process-name))
         (cmd (append (list justl-executable) args)))
     (when (get-buffer buffer-name)

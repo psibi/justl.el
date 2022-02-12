@@ -284,8 +284,7 @@ and output of process."
   (justl--log-command "just-command" cmd)
   (with-temp-buffer
     (let ((justl-status (call-process-shell-command cmd nil t))
-          (buf-string (buffer-substring-no-properties (point-min) (point-max)))
-          )
+          (buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (list justl-status buf-string))))
 
 (defun justl--get-recipies ()

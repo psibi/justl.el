@@ -127,6 +127,8 @@ NAME is the buffer name."
 
 (defvar justl--last-command nil)
 
+(defvar justl--list-command-exit-code t)
+
 (defconst justl--process-buffer "*just-process*"
   "Just process buffer name.")
 
@@ -274,6 +276,18 @@ CMD is the command string to run."
   (justl--log-command "just-command" cmd)
   (shell-command-to-string cmd))
 
+(defun justl--exec-to-string-with-exit-code (cmd)
+  "Replace \"shell-command-to-string\" to log to process buffer.
+
+CMD is the command string to run. Returns a list with status code
+and output of process."
+  (justl--log-command "just-command" cmd)
+  (with-temp-buffer
+    (let ((justl-status (call-process-shell-command cmd nil t))
+          (buf-string (buffer-substring-no-properties (point-min) (point-max)))
+          )
+      (list justl-status buf-string))))
+
 (defun justl--get-recipies ()
   "Return all the recipies."
   (let ((recipies (split-string (justl--exec-to-string
@@ -283,14 +297,18 @@ CMD is the command string to run."
 
 (defun justl--get-recipies-with-desc ()
   "Return all the recipies with description."
-  (let* ((recipe-lines (split-string
-                        (justl--exec-to-string
-                         (format "%s --list --unsorted"
-                                 justl-executable))
+  (let* ((recipe-status (justl--exec-to-string-with-exit-code (format "%s --list --unsorted"
+                                                                      justl-executable)))
+         (just-status (nth 0 recipe-status))
+         (recipe-lines (split-string
+                        (nth 1 recipe-status)
                         "\n"))
          (recipes (mapcar (lambda (x) (split-string x "# "))
-                       (cdr (seq-filter (lambda (x) (s-present? x)) recipe-lines)))))
-    (mapcar (lambda (x) (list (justl--get-recipe-name (nth 0 x)) (nth 1 x))) recipes)))
+                          (cdr (seq-filter (lambda (x) (s-present? x)) recipe-lines)))))
+    (setq justl--list-command-exit-code just-status)
+    (if (eq (nth 0 recipe-status) 0)
+        (mapcar (lambda (x) (list (justl--get-recipe-name (nth 0 x)) (nth 1 x))) recipes)
+      nil)))
 
 (defun justl--get-jrecipies ()
   "Return list of JRECIPE."
@@ -509,8 +527,13 @@ tweaked further by the user."
   (setq truncate-lines t)
   (let ((justfiles (justl--find-justfiles default-directory))
         (entries (justl--get-recipies-with-desc)))
-    (if (null justfiles)
-        (message "No justfiles found")
+    (if (or (null justfiles) (not (eq justl--list-command-exit-code 0)) )
+        (progn
+          (when (null justfiles)
+            (message "No justfiles found"))
+          (when (not (eq justl--list-command-exit-code 0) )
+            (message "Just process exited with exit-code %s"
+                     justl--list-command-exit-code)))
       (setq tabulated-list-format
             (vector (list "RECIPIES" justl-recipe-width t)
                     (list "DESCRIPTION" 20 t)))

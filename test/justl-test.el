@@ -154,7 +154,44 @@
                   :name "push"
                   :args (list (make-justl-jarg :arg "version" :default nil))))))
 
-;; (ert "justl--*")
+(ert-deftest justl--lists-recipe ()
+  (justl)
+  (with-current-buffer (justl--buffer-name)
+    (let ((buf-string (buffer-string)))
+      (should (s-contains? "plan" buf-string))))
+  (kill-buffer (justl--buffer-name)))
+
+(defun justl--wait-till-exit (buffer)
+   "Wait till the BUFFER has exited."
+   (let* ((proc (get-buffer-process buffer)))
+     (while (not (eq (process-status proc) 'exit))
+       (sit-for 0.2))))
+
+(ert-deftest justl--execute-recipe ()
+  (justl)
+  (with-current-buffer (justl--buffer-name)
+    (search-forward "plan")
+    (justl-exec-recipe)
+    (justl--wait-till-exit justl--output-process-buffer))
+  (with-current-buffer justl--output-process-buffer
+    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+      (should (s-contains? "planner" buf-string))))
+  (kill-buffer (justl--buffer-name))
+  (kill-buffer justl--output-process-buffer))
+
+(ert-deftest justl--execute-test-exit-status ()
+  (justl)
+  (with-current-buffer (justl--buffer-name)
+    (search-forward "plan")
+    (justl-exec-recipe)
+    (justl--wait-till-exit justl--output-process-buffer))
+  (with-current-buffer justl--output-process-buffer
+    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+      (should (s-contains? "Finished execution: exit-code 0" buf-string))))
+  (kill-buffer (justl--buffer-name))
+  (kill-buffer justl--output-process-buffer))
+
+;; (ert "justl--**")
 
 (provide 'justl-test)
 ;;; justl-test.el ends here

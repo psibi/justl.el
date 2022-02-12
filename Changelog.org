@@ -1,3 +1,28 @@
+* 0.4 (Unreleased)
+
+- Provides explicit details once just recipe execution is
+  completed. This is what you used to appear before:
+
+#+begin_example sh
+echo "planner"
+planner
+#+end_example
+
+This is what appears now:
+
+#+begin_example sh
+echo "planner"
+planner
+
+Finished execution: exit-code 0
+#+end_example
+
+This is useful for two reasons: When a huge amount of output is being
+produced from a just target, we know exactly when the process has
+finished and what it's exit status code looks like.
+
+- Better error handling when you have error in your just file.
+
 * 0.3
 
 - Add ability to turn off color in the output. Useful for eshell

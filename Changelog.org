@@ -1,4 +1,4 @@
-* 0.4 (Unreleased)
+* 0.4
 
 - Provides explicit details once just recipe execution is
   completed. This is what you used to appear before:

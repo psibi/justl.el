@@ -222,7 +222,7 @@ CMD is the just command as a list."
       (goto-char (point-max))
       (insert (format "\nFinished execution: exit-code %s" exit-status)))
     (unless (eq 0 exit-status)
-      (let ((err (with-current-buffer (justl--process-error-buffer process-name)
+      (let ((err (with-current-buffer (get-buffer-create (justl--process-error-buffer process-name))
                    (buffer-string))))
         (justl--append-to-process-buffer
          (format "[%s] error: %s"
@@ -421,7 +421,7 @@ tweaked further by the user."
   :argument-regexp "\\(--color \\(auto\\|always\\|never\\)\\)"
   :choices '("auto" "always" "never"))
 
-(define-transient-command justl-help-popup ()
+(transient-define-prefix justl-help-popup ()
   "Justl Menu"
   [["Arguments"
     ("-s" "Clear shell arguments" "--clear-shell-args")

@@ -1,3 +1,13 @@
+* 0.5
+
+- Stop following symbolic link as it leads to a high CPU usage. This
+  situation can happen frequently in a distribution like NixOS where
+  you can have a symbolic link inside nix's store ~/nix/store~.
+- Minor cleanup in the way logging happens in the ~just-process~
+  buffer.
+- Fix bug when process execution itself throws error.
+- Migrate from the deprecated ~define-transient-command~
+
 * 0.4
 
 - Provides explicit details once just recipe execution is

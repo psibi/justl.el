@@ -160,7 +160,7 @@ NAME is the buffer name."
 DIR represents the directory where search will be carried
 out.  The search will be performed recursively."
   (let ((case-fold-search t))
-    (directory-files-recursively dir "justfile" nil nil nil)))
+    (directory-files-recursively dir "justfile")))
 
 (defun justl--get-recipe-name (str)
   "Compute the recipe name from the string STR."

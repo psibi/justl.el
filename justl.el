@@ -417,7 +417,7 @@ tweaked further by the user."
   :description "Color output"
   :class 'transient-switches
   :key "-c"
-  :argument-format "--color %s"
+  :argument-format "--color=%s"
   :argument-regexp "\\(--color \\(auto\\|always\\|never\\)\\)"
   :choices '("auto" "always" "never"))
 

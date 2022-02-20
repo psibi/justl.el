@@ -127,7 +127,7 @@ NAME is the buffer name."
 
 (defvar justl--last-command nil)
 
-(defvar justl--list-command-exit-code t)
+(defvar justl--list-command-exit-code 0)
 
 (defconst justl--process-buffer "*just-process*"
   "Just process buffer name.")
@@ -159,11 +159,8 @@ NAME is the buffer name."
 
 DIR represents the directory where search will be carried
 out.  The search will be performed recursively."
-  (f-files dir (lambda (file)
-                 (or
-                  (cl-equalp "justfile" (f-filename file))
-                  (cl-equalp ".justfile" (f-filename file))))
-           t))
+  (let ((case-fold-search t))
+    (directory-files-recursively dir "justfile" nil nil nil)))
 
 (defun justl--get-recipe-name (str)
   "Compute the recipe name from the string STR."
@@ -215,20 +212,22 @@ CMD is the just command as a list."
   (let ((str-cmd (if (equal 'string (type-of cmd)) cmd (mapconcat #'identity cmd " "))))
     (setq justl--last-command str-cmd)
     (justl--append-to-process-buffer
-     (format "[%s]\ncommand: %s" process-name str-cmd))))
+     (format "[%s] \ncommand: %s" process-name str-cmd))))
 
 (defun justl--sentinel (process _)
   "Sentinel function for PROCESS."
   (let ((process-name (process-name process))
         (exit-status (process-exit-status process)))
-    (justl--append-to-process-buffer (format "[%s]\nexit-code: %s" process-name exit-status))
     (with-current-buffer (get-buffer justl--output-process-buffer)
       (goto-char (point-max))
       (insert (format "\nFinished execution: exit-code %s" exit-status)))
     (unless (eq 0 exit-status)
       (let ((err (with-current-buffer (justl--process-error-buffer process-name)
                    (buffer-string))))
-        (justl--append-to-process-buffer (format "error: %s" err))
+        (justl--append-to-process-buffer
+         (format "[%s] error: %s"
+                 process-name
+                 err))
         (error "Just process %s error: %s" process-name err)))))
 
 (defun justl--xterm-color-filter (proc string)

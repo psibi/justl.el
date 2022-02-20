@@ -7,6 +7,7 @@
   buffer.
 - Fix bug when process execution itself throws error.
 - Migrate from the deprecated ~define-transient-command~
+- Fix justl process when you pass transient argument for ~--color~~
 
 * 0.4
 

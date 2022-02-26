@@ -1,3 +1,11 @@
+* 0.6
+
+- Make the directory parsing smart. Now invoking justl from any
+  subdirectory should work.
+- eshell executes from the directory where justfile is placed.
+- Introduce buffer local variable ~~justl--justfile~~ which contains
+  the justfile location for a particular justl-mode buffer.
+
 * 0.5
 
 - Stop following symbolic link as it leads to a high CPU usage. This

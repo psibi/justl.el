@@ -154,13 +154,47 @@ NAME is the buffer name."
     (goto-char (point-max))
     (insert (format "%s\n" str))))
 
-(defun justl--find-justfiles (dir)
-  "Find all the justfiles inside a directory.
+(defconst justl--justfile-found "justfile"
+  "Constant to indicate that we know a justfile exists.")
 
-DIR represents the directory where search will be carried
-out.  The search will be performed recursively."
-  (let ((case-fold-search t))
-    (directory-files-recursively dir "justfile")))
+(defvar-local justl--justfile nil
+  "Buffer local variable which points to the justfile.
+
+If this is NIL, it means that no justfiles was found. In any
+other cases, it's a known path.")
+
+(defun justl--find-any-justfiles (dir filename)
+  "Find just FILENAME inside a sub-directory DIR or a parent directory.
+
+Returns the absolute path if FILENAME exists or nil if no path
+was found."
+  (let ((justfile-dir (f-traverse-upwards
+                       (lambda (path)
+                         (f-exists? (f-expand filename path)))
+                       dir) ))
+    (if justfile-dir
+        (f-expand filename justfile-dir)
+      (let ((justfile-paths (directory-files-recursively dir filename)))
+        (if justfile-paths
+            (car justfile-paths)
+          nil)))))
+
+(defun justl--find-justfiles (dir)
+  "Find justfiles inside a sub-directory DIR or a parent directory.
+
+DIR represents the directory where search will be carried out.
+It searches either for the filename justfile or .justfile"
+  (let ((justfile-path (justl--find-any-justfiles dir "justfile")))
+    (if justfile-path
+        (progn
+          (setq justl--justfile justfile-path)
+          justfile-path)
+      (let ((dot-justfile-path (justl--find-any-justfiles dir ".justfile")))
+        (if dot-justfile-path
+            (progn
+              (setq justl--justfile dot-justfile-path)
+              dot-justfile-path)
+          nil)))))
 
 (defun justl--get-recipe-name (str)
   "Compute the recipe name from the string STR."
@@ -175,7 +209,7 @@ out.  The search will be performed recursively."
     (make-justl-jarg :arg (nth 0 arg) :default (nth 1 arg))))
 
 (defun justl--str-to-jarg (str)
-  "Convert string STR to liat of JARG.
+  "Convert string STR to list of JARG.
 
 The string after the recipe name and before the build constraints
 is expected."
@@ -253,7 +287,7 @@ ARGS is a ist of arguments."
     (setq process-name "just"))
   (let ((buffer-name justl--output-process-buffer)
         (error-buffer (justl--process-error-buffer process-name))
-        (cmd (append (list justl-executable) args)))
+        (cmd (append (list justl-executable (justl--justfile-argument)) args)))
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))
     (when (get-buffer error-buffer)
@@ -293,10 +327,14 @@ and output of process."
                                          justl-executable)))))
     (mapcar #'string-trim-right recipies)))
 
-(defun justl--get-recipies-with-desc ()
+(defun justl--justfile-argument ()
+  (format "--justfile=%s" justl--justfile))
+
+(defun justl--get-recipies-with-desc (justfile)
   "Return all the recipies with description."
-  (let* ((recipe-status (justl--exec-to-string-with-exit-code (format "%s --list --unsorted"
-                                                                      justl-executable)))
+  (let* ((recipe-status (justl--exec-to-string-with-exit-code
+                         (format "%s --justfile=%s --list --unsorted"
+                                 justl-executable justfile)))
          (just-status (nth 0 recipe-status))
          (recipe-lines (split-string
                         (nth 1 recipe-status)
@@ -339,8 +377,9 @@ and output of process."
 
 (defun justl--buffer-name ()
   "Return justl buffer name."
-  (format "*just [%s]"
-          default-directory))
+  (let ((justfile (justl--find-justfiles default-directory)))
+    (format "*just [%s]"
+            (f-dirname justfile))))
 
 (defvar justl--line-number nil
   "Store the current line number to jump back after a refresh.")
@@ -362,14 +401,16 @@ and output of process."
   "Opens eshell buffer but does not execute it.
 Populates the eshell buffer with RECIPE name so that it can be
 tweaked further by the user."
-  (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe)))
+  (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe))
+         (default-directory (f-dirname justl--justfile)))
     (progn
       (eshell)
       (insert (format "just %s" recipe)))))
 
 (defun justl--exec-with-eshell (recipe)
   "Opens eshell buffer and execute the just RECIPE."
-  (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe)))
+  (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe))
+         (default-directory (f-dirname justl--justfile)))
     (progn
       (eshell)
       (insert (format "just %s" recipe))
@@ -379,8 +420,7 @@ tweaked further by the user."
   "Execute just recipe in eshell."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
-         (justfile (justl--find-justfiles default-directory))
-         (justl-recipe (justl--get-recipe-from-file (car justfile) recipe))
+         (justl-recipe (justl--get-recipe-from-file justl--justfile recipe))
          (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
     (if recipe-has-args
@@ -398,8 +438,7 @@ tweaked further by the user."
   "Open eshell with the recipe but do not execute it."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
-         (justfile (justl--find-justfiles default-directory))
-         (justl-recipe (justl--get-recipe-from-file (car justfile) recipe))
+         (justl-recipe (justl--get-recipe-from-file justl--justfile recipe))
          (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
     (if recipe-has-args
@@ -456,8 +495,7 @@ tweaked further by the user."
   "Execute just recipe."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
-         (justfile (justl--find-justfiles default-directory))
-         (justl-recipe (justl--get-recipe-from-file (car justfile) recipe))
+         (justl-recipe (justl--get-recipe-from-file justl--justfile recipe))
          (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
     (if recipe-has-args
@@ -475,8 +513,7 @@ tweaked further by the user."
   "Execute just recipe with arguments."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
-         (justfile (justl--find-justfiles default-directory))
-         (justl-recipe (justl--get-recipe-from-file (car justfile) recipe))
+         (justl-recipe (justl--get-recipe-from-file justl--justfile recipe))
          (t-args (transient-args 'justl-help-popup))
          (user-args (read-from-minibuffer
                      (format "Arguments seperated by spaces:"))))
@@ -491,10 +528,9 @@ tweaked further by the user."
   "Go to the recipe on justfile."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
-         (justfile (justl--find-justfiles default-directory))
-         (justl-recipe (justl--get-recipe-from-file (car justfile) recipe)))
+         (justl-recipe (justl--get-recipe-from-file justl--justfile recipe)))
     (progn
-      (find-file (car justfile))
+      (find-file justl--justfile)
       (goto-char 0)
       (when (re-search-forward (concat (justl-jrecipe-name justl-recipe) ".*:") nil t 1)
         (let ((start (point)))
@@ -523,8 +559,8 @@ tweaked further by the user."
   "Special mode for justl buffers."
   (buffer-disable-undo)
   (setq truncate-lines t)
-  (let ((justfiles (justl--find-justfiles default-directory))
-        (entries (justl--get-recipies-with-desc)))
+  (let* ((justfiles (justl--find-justfiles default-directory))
+        (entries (justl--get-recipies-with-desc justfiles)))
     (if (or (null justfiles) (not (eq justl--list-command-exit-code 0)) )
         (progn
           (when (null justfiles)
@@ -540,7 +576,7 @@ tweaked further by the user."
       (tabulated-list-init-header)
       (tabulated-list-print t)
       (hl-line-mode 1)
-      (message (concat "Just: " default-directory))
+      (message (concat "Just: " (f-dirname justfiles)))
       (justl--jump-back-to-line))))
 
 (provide 'justl)

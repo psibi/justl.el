@@ -154,9 +154,6 @@ NAME is the buffer name."
     (goto-char (point-max))
     (insert (format "%s\n" str))))
 
-(defconst justl--justfile-found "justfile"
-  "Constant to indicate that we know a justfile exists.")
-
 (defvar-local justl--justfile nil
   "Buffer local variable which points to the justfile.
 
@@ -171,7 +168,7 @@ was found."
   (let ((justfile-dir (f-traverse-upwards
                        (lambda (path)
                          (f-exists? (f-expand filename path)))
-                       dir) ))
+                       dir)))
     (if justfile-dir
         (f-expand filename justfile-dir)
       (let ((justfile-paths (directory-files-recursively dir filename)))

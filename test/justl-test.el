@@ -6,6 +6,7 @@
 
 (require 'justl)
 (require 'ert)
+(require 'f)
 
 (ert-deftest justl--get-recipies-test ()
   (should (equal
@@ -74,9 +75,6 @@
   (should (equal
            (justl--is-recipe-line-p "    just --list")
            nil)))
-
-(ert-deftest justl--find-justfiles-test ()
-  (should (equal (length (justl--find-justfiles ".")) 1)))
 
 (ert-deftest justl--get-recipe-from-file-test ()
   (should (equal
@@ -190,6 +188,16 @@
       (should (s-contains? "Finished execution: exit-code 0" buf-string))))
   (kill-buffer (justl--buffer-name))
   (kill-buffer justl--output-process-buffer))
+
+(ert-deftest justl--find-justfiles-check ()
+  (should (equal (f-filename (justl--find-justfiles default-directory)) "justfile")))
+
+(ert-deftest justl--get-recipies-with-desc-check ()
+  (let* ((justfile (justl--find-justfiles default-directory))
+         (recipies (justl--get-recipies-with-desc justfile)))
+    (should (member (list "default" "List all recipies") recipies))
+    (should (member (list "push" nil) recipies))
+    (should (member (list "push2" nil) recipies))))
 
 ;; (ert "justl--**")
 

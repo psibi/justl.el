@@ -328,10 +328,11 @@ and output of process."
     (mapcar #'string-trim-right recipies)))
 
 (defun justl--justfile-argument ()
+  "Provides justfile argument with the proper location."
   (format "--justfile=%s" justl--justfile))
 
 (defun justl--get-recipies-with-desc (justfile)
-  "Return all the recipies with description."
+  "Return all the recipies in JUSTFILE with description."
   (let* ((recipe-status (justl--exec-to-string-with-exit-code
                          (format "%s --justfile=%s --list --unsorted"
                                  justl-executable justfile)))

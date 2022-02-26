@@ -299,6 +299,30 @@ ARGS is a ist of arguments."
                   :command cmd)
     (pop-to-buffer buffer-name)))
 
+(defun justl--exec-without-justfile (process-name args)
+  "Utility function to run commands in the proper context and namespace.
+
+PROCESS-NAME is an identifier for the process.  Default to \"just\".
+ARGS is a ist of arguments."
+  (when (equal process-name "")
+    (setq process-name "just"))
+  (let ((buffer-name justl--output-process-buffer)
+        (error-buffer (justl--process-error-buffer process-name))
+        (cmd (append (list justl-executable) args)))
+    (when (get-buffer buffer-name)
+      (kill-buffer buffer-name))
+    (when (get-buffer error-buffer)
+      (kill-buffer error-buffer))
+    (justl--log-command process-name cmd)
+    (make-process :name process-name
+                  :buffer buffer-name
+                  :filter 'justl--xterm-color-filter
+                  :sentinel #'justl--sentinel
+                  :file-handler t
+                  :stderr nil
+                  :command cmd)
+    (pop-to-buffer buffer-name)))
+
 (defun justl--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.
 
@@ -358,7 +382,7 @@ and output of process."
   (interactive)
   (let* ((recipies (completing-read "Recipies: " (justl--get-recipies)
                                      nil nil nil nil "default")))
-    (justl--exec "just" (list recipies))))
+    (justl--exec-without-justfile "just" (list recipies))))
 
 (defvar justl-mode-map
   (let ((map (make-sparse-keymap)))

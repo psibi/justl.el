@@ -166,7 +166,7 @@ other cases, it's a known path.")
 (defun justl--traverse-upwards (fn &optional path)
   "Traverse up as long as FN return nil, starting at PATH.
 
-Variant of f.el's f-traverse-upwards but returns justfiles."
+Variant of f.el's 'f-traverse-upwards but returns justfiles."
   (unless path
     (setq path default-directory))
   (when (f-relative? path)
@@ -180,16 +180,16 @@ Variant of f.el's f-traverse-upwards but returns justfiles."
 (defun justl--find-any-justfiles (dir)
   "Find justfiles inside a sub-directory DIR or a parent directory.
 
-Returns the absolute path if FILENAME exists or nil if no path
+Returns the absolute path if file exists or nil if no path
 was found."
   (let ((case-fold-search t)
         (justfiles (justl--traverse-upwards
-                   (lambda (path)
-                     (directory-files path t justl--justfile-regex))
-                   dir)))
+                    (lambda (path)
+                      (directory-files path t justl--justfile-regex))
+                    dir)))
     (if justfiles
         (car justfiles)
-      (let ((justfile-paths (directory-files-recursively dir filename)))
+      (let ((justfile-paths (directory-files-recursively dir "justfile")))
         (if justfile-paths
             (car justfile-paths)
           nil)))))

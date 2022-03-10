@@ -1,3 +1,9 @@
+* 0.7 (Unreleased)
+
+- Finds all types of justfiles now and makes it compatible with the
+  ~just~ program. Earlier it used to just working with ~justfile~ and
+  ~.justfile.
+
 * 0.6
 
 - Make the directory parsing smart. Now invoking justl from any
@@ -15,7 +21,7 @@
   buffer.
 - Fix bug when process execution itself throws error.
 - Migrate from the deprecated ~define-transient-command~
-- Fix justl process when you pass transient argument for ~--color~~
+- Fix justl process when you pass transient argument for ~--color~
 
 * 0.4
 

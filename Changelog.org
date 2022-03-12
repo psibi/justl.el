@@ -1,4 +1,4 @@
-* 0.7 (Unreleased)
+* 0.7
 
 - Finds all types of justfiles now and makes it compatible with the
   ~just~ program. Earlier it used to just working with ~justfile~ and

@@ -305,13 +305,7 @@ ARGS is a ist of arguments."
     (when (get-buffer error-buffer)
       (kill-buffer error-buffer))
     (justl--log-command process-name cmd)
-    (make-process :name process-name
-                  :buffer buffer-name
-                  :filter 'justl--xterm-color-filter
-                  :sentinel #'justl--sentinel
-                  :file-handler t
-                  :stderr nil
-                  :command cmd)
+    (compile (s-join " " cmd))
     (pop-to-buffer buffer-name)))
 
 (defun justl--exec-without-justfile (process-name args)

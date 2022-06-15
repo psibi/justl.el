@@ -305,7 +305,8 @@ ARGS is a ist of arguments."
     (when (get-buffer error-buffer)
       (kill-buffer error-buffer))
     (justl--log-command process-name cmd)
-    (compile (s-join " " cmd))
+    (let ((compilation-buffer-name-function (lambda (x) "*just*")))
+        (compile (s-join " " cmd)))
     (pop-to-buffer buffer-name)))
 
 (defun justl--exec-without-justfile (process-name args)

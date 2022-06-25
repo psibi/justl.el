@@ -3,12 +3,14 @@
 - Define a compilation mode named ~justl-compile-mode~. Executing
   ~justl-exec-recipe~ (which is bind to the keybinding ~e~ in the
   transient buffer) which show results in this mode.
-- Use the variable ~justl-executable~ instead of hardcoding the string
-  ~just~ everywhere.
 - Don't output at the bottom of the screen if the just target
   execution fails. Instead, it's displayed in the compilation mode
   now.
 - Use font locking to hightlight the execution status of just target.
+- Make the ~*just-process*~ buffer as read only. This prevents from
+  un-intentional edits when viewing the logs.
+- Use the variable ~justl-executable~ instead of hardcoding the string
+  ~just~ everywhere.
 - Update CI to test for 28.1 Emacs. Remove other old version from the
   check matrix.
 

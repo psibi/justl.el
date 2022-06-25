@@ -159,10 +159,11 @@ NAME is the buffer name."
 
 (defun justl--append-to-process-buffer (str)
   "Append string STR to the process buffer."
-  (with-current-buffer (get-buffer-create justl--process-buffer)
-    ;; (read-only-mode -1);; fix me
-    (goto-char (point-max))
-    (insert (format "%s\n" str))))
+  (let ((inhibit-read-only t))
+    (with-current-buffer (get-buffer-create justl--process-buffer)
+      (goto-char (point-max))
+      (insert (format "%s\n" str))
+      (read-only-mode nil))))
 
 (defvar-local justl--justfile nil
   "Buffer local variable which points to the justfile.

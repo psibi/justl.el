@@ -70,9 +70,10 @@
 (require 'esh-mode)
 (require 's)
 (require 'f)
+(require 'compile)
 
 (defgroup justl nil
-  "Justfile customization group"
+  "Justfile customization group."
   :group 'languages
   :prefix "justl-"
   :link '(url-link :tag "Site" "https://github.com/psibi/justl.el")
@@ -138,6 +139,9 @@ NAME is the buffer name."
 (defconst justl--output-process-buffer "*just*"
   "Just output process buffer name.")
 
+(defconst justl--compilation-process-name "just-compilation-process"
+  "Process name for just compilation process.")
+
 (defconst justl--justfile-regex "[Jj][Uu][sS][tT][fF][iI][lL][eE]"
   "Justfile name.")
 
@@ -155,15 +159,16 @@ NAME is the buffer name."
 
 (defun justl--append-to-process-buffer (str)
   "Append string STR to the process buffer."
-  (with-current-buffer (get-buffer-create justl--process-buffer)
-    (read-only-mode -1)
-    (goto-char (point-max))
-    (insert (format "%s\n" str))))
+  (let ((inhibit-read-only t))
+    (with-current-buffer (get-buffer-create justl--process-buffer)
+      (goto-char (point-max))
+      (insert (format "%s\n" str))
+      (read-only-mode nil))))
 
 (defvar-local justl--justfile nil
   "Buffer local variable which points to the justfile.
 
-If this is NIL, it means that no justfiles was found. In any
+If this is NIL, it means that no justfiles was found.  In any
 other cases, it's a known path.")
 
 (defun justl--traverse-upwards (fn &optional path)
@@ -205,7 +210,7 @@ It searches either for the filename justfile or .justfile"
   (let ((justfile-path (justl--find-any-justfiles dir)))
     (if justfile-path
         (progn
-          (setq justl--justfile justfile-path)
+          (setq-local justl--justfile justfile-path)
           justfile-path))))
 
 (defun justl--get-recipe-name (str)
@@ -263,18 +268,20 @@ CMD is the just command as a list."
 (defun justl--sentinel (process _)
   "Sentinel function for PROCESS."
   (let ((process-name (process-name process))
+        (inhibit-read-only t)
         (exit-status (process-exit-status process)))
     (with-current-buffer (get-buffer justl--output-process-buffer)
       (goto-char (point-max))
-      (insert (format "\nFinished execution: exit-code %s" exit-status)))
+      (if (eq exit-status 0)
+          (insert (format "\nTarget execution finished at %s" (substring (current-time-string) 0 19)))
+        (insert (format "\nTarget execution exited abnormally with code %s at %s" exit-status (substring (current-time-string) 0 19)))))
     (unless (eq 0 exit-status)
       (let ((err (with-current-buffer (get-buffer-create (justl--process-error-buffer process-name))
                    (buffer-string))))
         (justl--append-to-process-buffer
          (format "[%s] error: %s"
                  process-name
-                 err))
-        (error "Just process %s error: %s" process-name err)))))
+                 err))))))
 
 (defun justl--xterm-color-filter (proc string)
   "Filter function for PROC handling colors.
@@ -282,7 +289,8 @@ CMD is the just command as a list."
 STRING is the data returned by the PROC"
   (when (buffer-live-p (process-buffer proc))
     (with-current-buffer (process-buffer proc)
-      (let ((moving (= (point) (process-mark proc))))
+      (let ((inhibit-read-only t)
+            (moving (= (point) (process-mark proc))))
         (save-excursion
           ;; Insert the text, advancing the process marker.
           (goto-char (process-mark proc))
@@ -290,29 +298,120 @@ STRING is the data returned by the PROC"
           (set-marker (process-mark proc) (point)))
         (if moving (goto-char (process-mark proc)))))))
 
+(defun justl-compilation-setup-buffer (buf dir mode &optional no-mode-line)
+  "Setup the compilation buffer for just-compile-mode.
+
+Prepare BUF for compilation process.  DIR is set as default
+directory and MODE is name of the Emacs mode.  NO-MODE-LINE
+controls if we are going to display the process status on mode line."
+  (let ((inhibit-read-only t))
+    (with-current-buffer buf
+    (erase-buffer)
+    (setq default-directory dir)
+    (funcall mode)
+    (unless no-mode-line
+      (setq mode-line-process
+            '((:propertize ":%s" face compilation-mode-line-run)
+              compilation-mode-line-errors)))
+    (force-mode-line-update)
+    (if (or compilation-auto-jump-to-first-error
+            (eq compilation-scroll-output 'first-error))
+        (set (make-local-variable 'compilation-auto-jump-to-next) t)))))
+
+(defvar justl--compile-command nil
+  "Last shell command used to do a compilation; default for next compilation.")
+
+(defun justl--make-process (command &optional args)
+  "Start a spellcheck compilation process with COMMAND.
+
+ARGS is a plist that affects how the process is run.
+- `:no-display' don't display buffer when starting compilation process
+- `:buffer' name for process buffer
+- `:process' name for compilation process
+- `:mode' mode for process buffer
+- `:directory' set `default-directory'
+- `:sentinel' process sentinel"
+  (let* ((buf (get-buffer-create
+               (or (plist-get args :buffer) justl--output-process-buffer)))
+         (process-name (or (plist-get args :process) justl--compilation-process-name))
+         (mode (or (plist-get args :mode) 'justl-compile-mode))
+         (directory (or (plist-get args :directory) (f-dirname justl--justfile)))
+         (sentinel (or (plist-get args :sentinel) #'justl--sentinel))
+         (inhibit-read-only t))
+    (setq next-error-last-buffer buf)
+    (justl-compilation-setup-buffer buf directory mode)
+    (with-current-buffer buf
+      (insert (format "Just target execution started at %s \n\n" (substring (current-time-string) 0 19))))
+    (with-current-buffer buf
+      (let* ((process (apply
+                       #'start-file-process process-name buf command)))
+        (setq justl--compile-command command)
+
+        (setq-local justl--justfile (justl--justfile-from-arg (elt command 1)))
+        (run-hook-with-args 'compilation-start-hook process)
+        (set-process-filter process 'justl--xterm-color-filter)
+        (set-process-sentinel process sentinel)
+        (set-process-coding-system process 'utf-8-emacs-unix 'utf-8-emacs-unix)
+        (pop-to-buffer buf)))))
+
+(defvar justl-compile-mode-map
+  (let ((map (make-sparse-keymap)))
+    (suppress-keymap map t)
+    (set-keymap-parent map compilation-mode-map)
+    (define-key map [remap recompile] 'justl-recompile)
+    map)
+  "Keymap for justl compilation log buffers.")
+
+(defun justl-recompile ()
+  "Execute the same just target again."
+  (interactive)
+  (justl--make-process justl--compile-command (list :buffer justl--output-process-buffer
+                                                    :process "just"
+                                                    :mode 'justl-compile-mode)))
+
+(defvar justl-mode-font-lock-keywords
+  '(
+    ("^Target execution \\(finished\\).*"
+     (0 '(face nil compilation-message nil help-echo nil mouse-face nil) t)
+     (1 compilation-info-face))
+        ("^Target execution \\(exited abnormally\\)\\(?:.*with code \\([0-9]+\\)\\)?.*"
+      (0 '(face nil compilation-message nil help-echo nil mouse-face nil) t)
+      (1 compilation-error-face)
+      (2 compilation-error-face nil t)))
+  "Things to highlight in justl-compile mode.")
+
+(define-compilation-mode justl-compile-mode "just-compile"
+  "Just compilation mode.
+
+Error matching regexes from compile.el are removed."
+  (setq-local compilation-error-regexp-alist-alist nil)
+  (setq-local compilation-error-regexp-alist nil)
+  (setq font-lock-defaults '(justl-mode-font-lock-keywords t))
+  (setq-local compilation-num-errors-found 0)
+  (setq-local compilation-num-warnings-found 0)
+  (setq-local compilation-num-infos-found 0)
+  (setq-local overlay-arrow-string "")
+  (setq next-error-overlay-arrow-position nil))
+
 (defun justl--exec (process-name args)
   "Utility function to run commands in the proper context and namespace.
 
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
 ARGS is a ist of arguments."
   (when (equal process-name "")
-    (setq process-name "just"))
+    (setq process-name justl-executable))
   (let ((buffer-name justl--output-process-buffer)
         (error-buffer (justl--process-error-buffer process-name))
-        (cmd (append (list justl-executable (justl--justfile-argument)) args)))
+        (cmd (append (list justl-executable (justl--justfile-argument)) args))
+        (mode 'justl-compile-mode))
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))
     (when (get-buffer error-buffer)
       (kill-buffer error-buffer))
     (justl--log-command process-name cmd)
-    (make-process :name process-name
-                  :buffer buffer-name
-                  :filter 'justl--xterm-color-filter
-                  :sentinel #'justl--sentinel
-                  :file-handler t
-                  :stderr nil
-                  :command cmd)
-    (pop-to-buffer buffer-name)))
+    (justl--make-process cmd (list :buffer buffer-name
+                                   :process process-name
+                                   :mode mode))))
 
 (defun justl--exec-without-justfile (process-name args)
   "Utility function to run commands in the proper context and namespace.
@@ -320,7 +419,7 @@ ARGS is a ist of arguments."
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
 ARGS is a ist of arguments."
   (when (equal process-name "")
-    (setq process-name "just"))
+    (setq process-name justl-executable))
   (let ((buffer-name justl--output-process-buffer)
         (error-buffer (justl--process-error-buffer process-name))
         (cmd (append (list justl-executable) args)))
@@ -367,18 +466,22 @@ and output of process."
   "Provides justfile argument with the proper location."
   (format "--justfile=%s" justl--justfile))
 
+(defun justl--justfile-from-arg (arg)
+  "Return justfile filepath from ARG."
+  (car (cdr (s-split "--justfile=" arg))))
+
 (defun justl--get-recipies-with-desc (justfile)
   "Return all the recipies in JUSTFILE with description."
   (let* ((recipe-status (justl--exec-to-string-with-exit-code
                          (format "%s --justfile=%s --list --unsorted"
                                  justl-executable justfile)))
-         (just-status (nth 0 recipe-status))
+         (justl-status (nth 0 recipe-status))
          (recipe-lines (split-string
                         (nth 1 recipe-status)
                         "\n"))
          (recipes (mapcar (lambda (x) (split-string x "# "))
                           (cdr (seq-filter (lambda (x) (s-present? x)) recipe-lines)))))
-    (setq justl--list-command-exit-code just-status)
+    (setq justl--list-command-exit-code justl-status)
     (if (eq (nth 0 recipe-status) 0)
         (mapcar (lambda (x) (list (justl--get-recipe-name (nth 0 x)) (nth 1 x))) recipes)
       nil)))
@@ -397,7 +500,7 @@ and output of process."
   (interactive)
   (let* ((recipies (completing-read "Recipies: " (justl--get-recipies)
                                      nil nil nil nil "default")))
-    (justl--exec-without-justfile "just" (list recipies))))
+    (justl--exec-without-justfile justl-executable (list recipies))))
 
 (defvar justl-mode-map
   (let ((map (make-sparse-keymap)))
@@ -498,7 +601,7 @@ tweaked further by the user."
   :choices '("auto" "always" "never"))
 
 (transient-define-prefix justl-help-popup ()
-  "Justl Menu"
+  "Justl Menu."
   [["Arguments"
     ("-s" "Clear shell arguments" "--clear-shell-args")
     ("-d" "Dry run" "--dry-run")
@@ -541,10 +644,10 @@ tweaked further by the user."
                                                  (format "Just arg for %s:" (justl-jarg-arg arg))
                                                  (justl--util-maybe (justl-jarg-default arg) "")))
                                   cmd-args)))
-          (justl--exec "just"
+          (justl--exec justl-executable
                        (append t-args
                                (cons (justl-jrecipe-name justl-recipe) user-args))))
-      (justl--exec "just" (append t-args (list recipe))))))
+      (justl--exec justl-executable (append t-args (list recipe))))))
 
 (defun justl--exec-recipe-with-args ()
   "Execute just recipe with arguments."
@@ -555,7 +658,7 @@ tweaked further by the user."
          (user-args (read-from-minibuffer
                      (format "Arguments seperated by spaces:"))))
     (justl--exec
-     "just"
+     justl-executable
      (append t-args
              (cons
               (justl-jrecipe-name justl-recipe)

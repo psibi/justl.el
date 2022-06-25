@@ -15,10 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         emacs_version:
+          - 28.1
           - 27.2
-          - 27.1
-          - 26.1
-          - 26.2
           - 26.3
         ignore_warnings:
           - false
@@ -30,12 +28,12 @@ jobs:
     - uses: purcell/setup-emacs@master
       with:
         version: ${{ matrix.emacs_version }}
-    - uses: leotaku/elisp-check@master
+    - uses: leotaku/elisp-check@v1.3
       with:
-        file: '*.el'
+        file: "justl.el"
         check: melpa
         ignore_warnings: ${{ matrix.ignore_warnings }}
-        warnings_as_errors: true
+        warnings_as_errors: false
     - name: ERT tests
       uses: leotaku/elisp-check@master
       with:

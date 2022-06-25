@@ -10,7 +10,7 @@
 
 (ert-deftest justl--get-recipies-test ()
   (should (equal
-           (list "default" "build-cmd" "plan" "push" "push2")
+           (list "default" "build-cmd" "plan" "push" "push2" "fail")
            (justl--get-recipies))))
 
 (ert-deftest justl--list-to-recipe-test ()
@@ -185,7 +185,19 @@
     (justl--wait-till-exit justl--output-process-buffer))
   (with-current-buffer justl--output-process-buffer
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
-      (should (s-contains? "Finished execution: exit-code 0" buf-string))))
+      (should (s-contains? "Target execution finished" buf-string))))
+  (kill-buffer (justl--buffer-name))
+  (kill-buffer justl--output-process-buffer))
+
+(ert-deftest justl--fail-recipe ()
+  (justl)
+  (with-current-buffer (justl--buffer-name)
+    (search-forward "fail")
+    (justl-exec-recipe)
+    (justl--wait-till-exit justl--output-process-buffer))
+  (with-current-buffer justl--output-process-buffer
+    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+      (should (s-contains? "exited abnormally" buf-string))))
   (kill-buffer (justl--buffer-name))
   (kill-buffer justl--output-process-buffer))
 

@@ -8,6 +8,7 @@
 - Don't output at the bottom of the screen if the just target
   execution fails. Instead, it's displayed in the compilation mode
   now.
+- Use font locking to hightlight the execution status of just target.
 - Update CI to test for 28.1 Emacs. Remove other old version from the
   check matrix.
 

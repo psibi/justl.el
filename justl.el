@@ -72,7 +72,7 @@
 (require 'f)
 
 (defgroup justl nil
-  "Justfile customization group"
+  "Justfile customization group."
   :group 'languages
   :prefix "justl-"
   :link '(url-link :tag "Site" "https://github.com/psibi/justl.el")
@@ -166,7 +166,7 @@ NAME is the buffer name."
 (defvar-local justl--justfile nil
   "Buffer local variable which points to the justfile.
 
-If this is NIL, it means that no justfiles was found. In any
+If this is NIL, it means that no justfiles was found.  In any
 other cases, it's a known path.")
 
 (defun justl--traverse-upwards (fn &optional path)
@@ -297,7 +297,11 @@ STRING is the data returned by the PROC"
         (if moving (goto-char (process-mark proc)))))))
 
 (defun justl-compilation-setup-buffer (buf dir mode &optional no-mode-line)
-  "Prepare BUF for compilation process."
+  "Setup the compilation buffer for just-compile-mode.
+
+Prepare BUF for compilation process.  DIR is set as default
+directory and MODE is name of the Emacs mode.  NO-MODE-LINE
+controls if we are going to display the process status on mode line."
   (let ((inhibit-read-only t))
     (with-current-buffer buf
     (erase-buffer)
@@ -359,18 +363,41 @@ ARGS is a plist that affects how the process is run.
   "Keymap for justl compilation log buffers.")
 
 (defun justl-recompile ()
+  "Execute the same just target again."
   (interactive)
   (justl--make-process justl--compile-command (list :buffer justl--output-process-buffer
                                                     :process "just"
                                                     :mode 'justl-compile-mode)))
-;;; todo: fix just hardcode above
+
+(defconst justl-mode-compilation-finished "^Target execution \\(finished\\).*")
+
+(defvar sibi-test
+  '(justl-mode-compilation-finished (0 '(face nil compilation-message nil help-echo nil mouse-face nil) t)
+    ()) )
+
+(defvar justl-mode-font-lock-keywords
+  '(
+    ("^Target execution \\(finished\\).*"
+     (0 '(face nil compilation-message nil help-echo nil mouse-face nil) t)
+     (1 compilation-info-face))
+        ("^Target execution \\(exited abnormally\\)\\(?:.*with code \\([0-9]+\\)\\)?.*"
+      (0 '(face nil compilation-message nil help-echo nil mouse-face nil) t)
+      (1 compilation-error-face)
+      (2 compilation-error-face nil t)))
+  "Things to highlight in justl-compile mode.")
 
 (define-compilation-mode justl-compile-mode "just-compile"
   "Just compilation mode.
 
 Error matching regexes from compile.el are removed."
   (setq-local compilation-error-regexp-alist-alist nil)
-  (setq-local compilation-error-regexp-alist nil))
+  (setq-local compilation-error-regexp-alist nil)
+  (setq font-lock-defaults '(justl-mode-font-lock-keywords t))
+  (setq-local compilation-num-errors-found 0)
+  (setq-local compilation-num-warnings-found 0)
+  (setq-local compilation-num-infos-found 0)
+  (setq-local overlay-arrow-string "")
+  (setq next-error-overlay-arrow-position nil))
 
 (defun justl--exec (process-name args)
   "Utility function to run commands in the proper context and namespace.
@@ -446,7 +473,7 @@ and output of process."
   (format "--justfile=%s" justl--justfile))
 
 (defun justl--justfile-from-arg (arg)
-  "Return justfile filepatch from ARG"
+  "Return justfile filepath from ARG."
   (car (cdr (s-split "--justfile=" arg))))
 
 (defun justl--get-recipies-with-desc (justfile)

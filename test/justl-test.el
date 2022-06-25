@@ -211,7 +211,7 @@
     (should (member (list "push" nil) recipies))
     (should (member (list "push2" nil) recipies))))
 
-(ert "justl--**")
+;; (ert "justl--**")
 
 (provide 'justl-test)
 ;;; justl-test.el ends here

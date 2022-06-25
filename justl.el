@@ -70,6 +70,7 @@
 (require 'esh-mode)
 (require 's)
 (require 'f)
+(require 'compile)
 
 (defgroup justl nil
   "Justfile customization group."
@@ -314,8 +315,7 @@ controls if we are going to display the process status on mode line."
     (force-mode-line-update)
     (if (or compilation-auto-jump-to-first-error
             (eq compilation-scroll-output 'first-error))
-        (set (make-local-variable 'compilation-auto-jump-to-next) t))
-    )))
+        (set (make-local-variable 'compilation-auto-jump-to-next) t)))))
 
 (defvar justl--compile-command nil
   "Last shell command used to do a compilation; default for next compilation.")
@@ -334,7 +334,6 @@ ARGS is a plist that affects how the process is run.
                (or (plist-get args :buffer) justl--output-process-buffer)))
          (process-name (or (plist-get args :process) justl--compilation-process-name))
          (mode (or (plist-get args :mode) 'justl-compile-mode))
-         (justfile justl--justfile)
          (directory (or (plist-get args :directory) (f-dirname justl--justfile)))
          (sentinel (or (plist-get args :sentinel) #'justl--sentinel))
          (inhibit-read-only t))
@@ -368,12 +367,6 @@ ARGS is a plist that affects how the process is run.
   (justl--make-process justl--compile-command (list :buffer justl--output-process-buffer
                                                     :process "just"
                                                     :mode 'justl-compile-mode)))
-
-(defconst justl-mode-compilation-finished "^Target execution \\(finished\\).*")
-
-(defvar sibi-test
-  '(justl-mode-compilation-finished (0 '(face nil compilation-message nil help-echo nil mouse-face nil) t)
-    ()) )
 
 (defvar justl-mode-font-lock-keywords
   '(
@@ -607,7 +600,7 @@ tweaked further by the user."
   :choices '("auto" "always" "never"))
 
 (transient-define-prefix justl-help-popup ()
-  "Justl Menu"
+  "Justl Menu."
   [["Arguments"
     ("-s" "Clear shell arguments" "--clear-shell-args")
     ("-d" "Dry run" "--dry-run")

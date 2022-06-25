@@ -270,15 +270,16 @@ CMD is the just command as a list."
         (exit-status (process-exit-status process)))
     (with-current-buffer (get-buffer justl--output-process-buffer)
       (goto-char (point-max))
-      (insert (format "\nFinished execution: exit-code %s" exit-status)))
+      (if (eq exit-status 0)
+          (insert (format "\nTarget execution finished at %s" (substring (current-time-string) 0 19)))
+        (insert (format "\nTarget execution exited abnormally with code %s at %s" exit-status (substring (current-time-string) 0 19)))))
     (unless (eq 0 exit-status)
       (let ((err (with-current-buffer (get-buffer-create (justl--process-error-buffer process-name))
                    (buffer-string))))
         (justl--append-to-process-buffer
          (format "[%s] error: %s"
                  process-name
-                 err))
-        (error "Just process %s error: %s" process-name err)))))
+                 err))))))
 
 (defun justl--xterm-color-filter (proc string)
   "Filter function for PROC handling colors.
@@ -349,14 +350,6 @@ ARGS is a plist that affects how the process is run.
         (set-process-coding-system process 'utf-8-emacs-unix 'utf-8-emacs-unix)
         (pop-to-buffer buf)))))
 
-(defvar justl-exit-regex
-  (let ((err ".*--> ")
-        (file "\\(.*.rs\\)")
-        (start-line "\\([0-9]+\\)"))
-    (let ((re (concat err file ":" start-line)))
-      (cons re '(1 2 3))))
-  "Create hyperlink in compilation buffers for spellcheck errors.")
-
 (defvar justl-compile-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map t)
@@ -377,11 +370,7 @@ ARGS is a plist that affects how the process is run.
 
 Error matching regexes from compile.el are removed."
   (setq-local compilation-error-regexp-alist-alist nil)
-  (add-to-list 'compilation-error-regexp-alist-alist
-               (cons 'justl-exit-end justl-exit-regex))
-
-  (setq-local compilation-error-regexp-alist nil)
-  (add-to-list 'compilation-error-regexp-alist 'justl-exit-end))
+  (setq-local compilation-error-regexp-alist nil))
 
 (defun justl--exec (process-name args)
   "Utility function to run commands in the proper context and namespace.

@@ -15,10 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         emacs_version:
+          - 28.1
           - 27.2
-          - 27.1
-          - 26.1
-          - 26.2
           - 26.3
         ignore_warnings:
           - false

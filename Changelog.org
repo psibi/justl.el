@@ -5,6 +5,11 @@
   transient buffer) which show results in this mode.
 - Use the variable ~justl-executable~ instead of hardcoding the string
   ~just~ everywhere.
+- Don't output at the bottom of the screen if the just target
+  execution fails. Instead, it's displayed in the compilation mode
+  now.
+- Update CI to test for 28.1 Emacs. Remove other old version from the
+  check matrix.
 
 * 0.7
 

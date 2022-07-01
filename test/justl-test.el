@@ -10,7 +10,7 @@
 
 (ert-deftest justl--get-recipies-test ()
   (should (equal
-           (list "default" "build-cmd" "plan" "push" "push2" "fail")
+           (list "default" "build-cmd" "plan" "push" "push2" "fail" "carriage-return")
            (justl--get-recipies))))
 
 (ert-deftest justl--list-to-recipe-test ()
@@ -210,6 +210,20 @@
     (should (member (list "default" "List all recipies") recipies))
     (should (member (list "push" nil) recipies))
     (should (member (list "push2" nil) recipies))))
+
+(ert-deftest justl--execute-recipe-which-prints-carriage-return ()
+  "Carriage return should be handled in a way that allows overwriting lines."
+  (justl)
+  (with-current-buffer (justl--buffer-name)
+    (search-forward "carriage-return")
+    (justl-exec-recipe)
+    (justl--wait-till-exit justl--output-process-buffer))
+  (with-current-buffer justl--output-process-buffer
+    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+      (should (s-contains? "DONE\n" buf-string))
+      (should-not (s-contains? "1/3\r2/3\r3/3\rDONE\n" buf-string))))
+  (kill-buffer (justl--buffer-name))
+  (kill-buffer justl--output-process-buffer))
 
 ;; (ert "justl--**")
 

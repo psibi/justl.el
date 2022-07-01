@@ -21,3 +21,11 @@ push2 version1 version2:
 # A target that will fail
 fail:
     exit 1
+
+# A target that will print strings with carriage return
+carriage-return:
+    #!/usr/bin/env bash
+    printf "1/3\r"
+    printf "2/3\r"
+    printf "3/3\r"
+    printf "DONE\n"

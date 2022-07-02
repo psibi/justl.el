@@ -29,3 +29,8 @@ carriage-return:
     printf "2/3\r"
     printf "3/3\r"
     printf "DONE\n"
+
+# A target that will print colors
+color:
+    #!/usr/bin/env bash
+    printf "\x1B[31mThis is red text\n"

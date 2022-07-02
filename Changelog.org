@@ -1,3 +1,7 @@
+* 0.9
+
+- Handle carriage return properly on the compilation buffer.
+
 * 0.8
 
 - Define a compilation mode named ~justl-compile-mode~. Executing

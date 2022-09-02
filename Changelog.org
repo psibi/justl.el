@@ -1,3 +1,7 @@
+* 0.10
+
+- Integrate compilation mode for ~justl-exec-recipe-in-dir~
+
 * 0.9
 
 - Handle carriage return properly on the compilation buffer.

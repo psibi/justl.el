@@ -1,6 +1,7 @@
 * 0.10
 
 - Integrate compilation mode for ~justl-exec-recipe-in-dir~
+- Fix documentation in README.
 
 * 0.9
 

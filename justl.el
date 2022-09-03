@@ -19,7 +19,7 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 ;; USA
 
-;; Version: 0.9
+;; Version: 0.10
 ;; Author: Sibi Prabakaran
 ;; Keywords: just justfile tools processes
 ;; URL: https://github.com/psibi/justl.el
@@ -39,7 +39,7 @@
 ;;
 ;; Alternatively, if you want to just execute a recipe, call
 ;;
-;; M-x justl-execute-recipe-in-dir
+;; M-x justl-exec-recipe-in-dir
 ;;
 ;; Shortcuts:
 ;;

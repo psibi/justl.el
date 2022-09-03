@@ -508,7 +508,7 @@ and output of process."
 
 (defvar justl-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "g") 'justl)
+    (define-key map (kbd "g") 'justl--refresh-buffer)
     (define-key map (kbd "e") 'justl-exec-recipe)
     (define-key map (kbd "E") 'justl-exec-eshell)
     (define-key map (kbd "?") 'justl-help-popup)
@@ -691,6 +691,20 @@ tweaked further by the user."
     (goto-char (point-min))
     (forward-line (1- justl--line-number))))
 
+(defun justl--refresh-buffer ()
+  "Refresh justl buffer."
+  (interactive)
+  (let* ((justfiles (justl--find-justfiles default-directory))
+         (entries (justl--get-recipies-with-desc justfiles)))
+    (when (not (eq justl--list-command-exit-code 0) )
+      (error "Just process exited with exit-code %s. Check justfile syntax"
+               justl--list-command-exit-code))
+    (justl--save-line)
+    (setq tabulated-list-entries (justl--tabulated-entries entries))
+    (tabulated-list-print t)
+    (justl--jump-back-to-line)
+    (message "justl-mode: Refreshed")))
+
 ;;;###autoload
 (defun justl ()
   "Invoke the justl buffer."
@@ -720,8 +734,7 @@ tweaked further by the user."
       (tabulated-list-init-header)
       (tabulated-list-print t)
       (hl-line-mode 1)
-      (message (concat "Just: " (f-dirname justfiles)))
-      (justl--jump-back-to-line))))
+      (message (concat "Just: " (f-dirname justfiles))))))
 
 (provide 'justl)
 ;;; justl.el ends here

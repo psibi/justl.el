@@ -350,7 +350,6 @@ ARGS is a plist that affects how the process is run.
       (let* ((process (apply
                        #'start-file-process process-name buf command)))
         (setq justl--compile-command command)
-
         (setq-local justl--justfile (justl--justfile-from-arg (elt command 1)))
         (run-hook-with-args 'compilation-start-hook process)
         (set-process-filter process 'justl--process-filter)
@@ -371,6 +370,9 @@ ARGS is a plist that affects how the process is run.
   (interactive)
   (justl--make-process justl--compile-command (list :buffer justl--output-process-buffer
                                                     :process "just"
+                                                    :directory (if justl--justfile
+                                                                   (f-dirname justl--justfile)
+                                                                 default-directory)
                                                     :mode 'justl-compile-mode)))
 
 (defvar justl-mode-font-lock-keywords
@@ -426,20 +428,18 @@ ARGS is a ist of arguments."
     (setq process-name justl-executable))
   (let ((buffer-name justl--output-process-buffer)
         (error-buffer (justl--process-error-buffer process-name))
-        (cmd (append (list justl-executable) args)))
+        (cmd (append (list justl-executable) args))
+        (mode 'justl-compile-mode))
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))
     (when (get-buffer error-buffer)
       (kill-buffer error-buffer))
     (justl--log-command process-name cmd)
-    (make-process :name process-name
-                  :buffer buffer-name
-                  :filter 'justl--process-filter
-                  :sentinel #'justl--sentinel
-                  :file-handler t
-                  :stderr nil
-                  :command cmd)
-    (pop-to-buffer buffer-name)))
+    (justl--make-process cmd (list :buffer buffer-name
+                                   :process process-name
+                                   :directory default-directory
+                                   :mode mode)))
+  (pop-to-buffer justl--output-process-buffer))
 
 (defun justl--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.

@@ -1,7 +1,9 @@
 * 0.10
 
 - Integrate compilation mode for ~justl-exec-recipe-in-dir~
-- Fix documentation in README.
+- Implement new logic for refreshing justl buffer. This improves UX
+  when there is a syntax issue with justfile. Fixes [[https://github.com/psibi/justl.el/issues/23][issue 23]].
+- Improve usage documentation.
 
 * 0.9
 

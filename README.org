@@ -37,7 +37,7 @@ For [[https://github.com/doomemacs/doomemacs][doom emacs]], you can install as:
 #+begin_example elisp
 (use-package! justl
   :config
-  (map! :n "e" 'justl-exec-recipe)
+  (map! :n "e" 'justl-exec-recipe))
   )
 #+end_example
 

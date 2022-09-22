@@ -32,6 +32,14 @@ Optionally you can install it via [[https://github.com/quelpa/quelpa][quelpa]] t
   (justl-recipe-width 25))
 #+end_example
 
+For [[https://github.com/doomemacs/doomemacs][doom emacs]], you can install as:
+
+#+begin_example elisp
+(use-package! justl
+  :config
+  (map! :n "e" 'justl-exec-recipe))
+#+end_example
+
 * Usage
 
 To list all the recipes present in your justfile, call

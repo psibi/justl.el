@@ -474,7 +474,8 @@ and output of process."
 
 (defun justl--justfile-from-arg (arg)
   "Return justfile filepath from ARG."
-  (car (cdr (s-split "--justfile=" arg))))
+  (when arg
+    (car (cdr (s-split "--justfile=" arg)))))
 
 (defun justl--get-recipies-with-desc (justfile)
   "Return all the recipies in JUSTFILE with description."
@@ -511,7 +512,7 @@ and output of process."
 (defun justl-exec-default-recipe ()
   "Execute default recipe."
   (interactive)
-  (justl--exec-without-justfile justl-executable (list "default")))
+  (justl--exec-without-justfile justl-executable nil))
 
 (defvar justl-mode-map
   (let ((map (make-sparse-keymap)))

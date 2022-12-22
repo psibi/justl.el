@@ -41,6 +41,8 @@
 ;;
 ;; M-x justl-exec-recipe-in-dir
 ;;
+;; To execute default recipe, call justl-exec-default-recipe
+;;
 ;; Shortcuts:
 ;;
 ;; On the just screen, place your cursor on a recipe
@@ -472,7 +474,8 @@ and output of process."
 
 (defun justl--justfile-from-arg (arg)
   "Return justfile filepath from ARG."
-  (car (cdr (s-split "--justfile=" arg))))
+  (when arg
+    (car (cdr (s-split "--justfile=" arg)))))
 
 (defun justl--get-recipies-with-desc (justfile)
   "Return all the recipies in JUSTFILE with description."
@@ -505,6 +508,11 @@ and output of process."
   (let* ((recipies (completing-read "Recipies: " (justl--get-recipies)
                                      nil nil nil nil "default")))
     (justl--exec-without-justfile justl-executable (list recipies))))
+
+(defun justl-exec-default-recipe ()
+  "Execute default recipe."
+  (interactive)
+  (justl--exec-without-justfile justl-executable nil))
 
 (defvar justl-mode-map
   (let ((map (make-sparse-keymap)))

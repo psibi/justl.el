@@ -1,3 +1,7 @@
+* 0.11
+
+- Implement interactive function ~justl-exec-default-recipe~
+
 * 0.10
 
 - Integrate compilation mode for ~justl-exec-recipe-in-dir~

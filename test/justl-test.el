@@ -239,6 +239,15 @@
   (kill-buffer (justl--buffer-name))
   (kill-buffer justl--output-process-buffer))
 
+(ert-deftest justl--execute-default-recipe ()
+  "Checks that default recipe is printed."
+  (justl-exec-default-recipe)
+  (justl--wait-till-exit justl--output-process-buffer)
+  (with-current-buffer justl--output-process-buffer
+    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+      (should (s-contains? "Available recipes:\n" buf-string))))
+  (kill-buffer justl--output-process-buffer))
+
 ;; (ert "justl--**")
 
 (provide 'justl-test)

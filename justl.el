@@ -90,6 +90,12 @@
   :group 'justl
   :safe 'stringp)
 
+(defcustom justl-args ""
+  "Pass arguments to the just executable itself."
+  :type 'string
+  :group 'justl
+  :safe 'stringp)
+
 (defcustom justl-recipe-width 20
   "Width of the recipe column."
   :type 'integer
@@ -410,7 +416,7 @@ ARGS is a ist of arguments."
     (setq process-name justl-executable))
   (let ((buffer-name justl--output-process-buffer)
         (error-buffer (justl--process-error-buffer process-name))
-        (cmd (append (list justl-executable (justl--justfile-argument)) args))
+        (cmd (append (list justl-executable justl-args (justl--justfile-argument)) args))
         (mode 'justl-compile-mode))
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))

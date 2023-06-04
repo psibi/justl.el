@@ -95,6 +95,16 @@
   :type 'integer
   :group 'justl)
 
+(defcustom justl-justfile nil
+  "Buffer local variable which points to the justfile.
+
+If this is NIL, it means that no justfiles was found.  In any
+other cases, it's a known path."
+  :type 'string
+  :local t
+  :group 'justl
+  :safe 'stringp)
+
 (cl-defstruct justl-jrecipe name args)
 (cl-defstruct justl-jarg arg default)
 
@@ -170,11 +180,6 @@ NAME is the buffer name."
       (insert (format "%s\n" str))
       (read-only-mode nil))))
 
-(defvar-local justl--justfile nil
-  "Buffer local variable which points to the justfile.
-
-If this is NIL, it means that no justfiles was found.  In any
-other cases, it's a known path.")
 
 (defun justl--traverse-upwards (fn &optional path)
   "Traverse up as long as FN return nil, starting at PATH.
@@ -215,7 +220,7 @@ It searches either for the filename justfile or .justfile"
   (let ((justfile-path (justl--find-any-justfiles dir)))
     (if justfile-path
         (progn
-          (setq-local justl--justfile justfile-path)
+          (setq-local justl-justfile justfile-path)
           justfile-path))))
 
 (defun justl--get-recipe-name (str)
@@ -341,7 +346,7 @@ ARGS is a plist that affects how the process is run.
                (or (plist-get args :buffer) justl--output-process-buffer)))
          (process-name (or (plist-get args :process) justl--compilation-process-name))
          (mode (or (plist-get args :mode) 'justl-compile-mode))
-         (directory (or (plist-get args :directory) (f-dirname justl--justfile)))
+         (directory (or (plist-get args :directory) (f-dirname justl-justfile)))
          (sentinel (or (plist-get args :sentinel) #'justl--sentinel))
          (inhibit-read-only t))
     (setq next-error-last-buffer buf)
@@ -352,7 +357,7 @@ ARGS is a plist that affects how the process is run.
       (let* ((process (apply
                        #'start-file-process process-name buf command)))
         (setq justl--compile-command command)
-        (setq-local justl--justfile (justl--justfile-from-arg (elt command 1)))
+        (setq-local justl-justfile (justl--justfile-from-arg (elt command 1)))
         (run-hook-with-args 'compilation-start-hook process)
         (set-process-filter process 'justl--process-filter)
         (set-process-sentinel process sentinel)
@@ -372,8 +377,8 @@ ARGS is a plist that affects how the process is run.
   (interactive)
   (justl--make-process justl--compile-command (list :buffer justl--output-process-buffer
                                                     :process "just"
-                                                    :directory (if justl--justfile
-                                                                   (f-dirname justl--justfile)
+                                                    :directory (if justl-justfile
+                                                                   (f-dirname justl-justfile)
                                                                  default-directory)
                                                     :mode 'justl-compile-mode)))
 
@@ -470,7 +475,7 @@ and output of process."
 
 (defun justl--justfile-argument ()
   "Provides justfile argument with the proper location."
-  (format "--justfile=%s" justl--justfile))
+  (format "--justfile=%s" justl-justfile))
 
 (defun justl--justfile-from-arg (arg)
   "Return justfile filepath from ARG."
@@ -554,7 +559,7 @@ and output of process."
 Populates the eshell buffer with RECIPE name so that it can be
 tweaked further by the user."
   (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe))
-         (default-directory (f-dirname justl--justfile)))
+         (default-directory (f-dirname justl-justfile)))
     (progn
       (eshell)
       (insert (format "just %s" recipe)))))
@@ -562,7 +567,7 @@ tweaked further by the user."
 (defun justl--exec-with-eshell (recipe)
   "Opens eshell buffer and execute the just RECIPE."
   (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe))
-         (default-directory (f-dirname justl--justfile)))
+         (default-directory (f-dirname justl-justfile)))
     (progn
       (eshell)
       (insert (format "just %s" recipe))
@@ -572,7 +577,7 @@ tweaked further by the user."
   "Execute just recipe in eshell."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
-         (justl-recipe (justl--get-recipe-from-file justl--justfile recipe))
+         (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
          (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
     (if recipe-has-args
@@ -590,7 +595,7 @@ tweaked further by the user."
   "Open eshell with the recipe but do not execute it."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
-         (justl-recipe (justl--get-recipe-from-file justl--justfile recipe))
+         (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
          (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
     (if recipe-has-args
@@ -622,6 +627,7 @@ tweaked further by the user."
     ("-n" "Disable Highlight" "--no-highlight")
     ("-q" "Quiet" "--quiet")
     ("-v" "Verbose output" "--verbose")
+    ("-u" "Unstable" "--unstable")
     (justl--color)
     ]
    ["Actions"
@@ -647,7 +653,7 @@ tweaked further by the user."
   "Execute just recipe."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
-         (justl-recipe (justl--get-recipe-from-file justl--justfile recipe))
+         (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
          (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
     (if recipe-has-args
@@ -665,7 +671,7 @@ tweaked further by the user."
   "Execute just recipe with arguments."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
-         (justl-recipe (justl--get-recipe-from-file justl--justfile recipe))
+         (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
          (t-args (transient-args 'justl-help-popup))
          (user-args (read-from-minibuffer
                      (format "Arguments seperated by spaces:"))))
@@ -680,9 +686,9 @@ tweaked further by the user."
   "Go to the recipe on justfile."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
-         (justl-recipe (justl--get-recipe-from-file justl--justfile recipe)))
+         (justl-recipe (justl--get-recipe-from-file justl-justfile recipe)))
     (progn
-      (find-file justl--justfile)
+      (find-file justl-justfile)
       (goto-char 0)
       (when (re-search-forward (concat (justl-jrecipe-name justl-recipe) ".*:") nil t 1)
         (let ((start (point)))

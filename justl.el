@@ -90,12 +90,6 @@
   :group 'justl
   :safe 'stringp)
 
-(defcustom justl-args ""
-  "Pass arguments to the just executable itself."
-  :type 'string
-  :group 'justl
-  :safe 'stringp)
-
 (defcustom justl-recipe-width 20
   "Width of the recipe column."
   :type 'integer
@@ -421,7 +415,7 @@ ARGS is a ist of arguments."
     (setq process-name justl-executable))
   (let ((buffer-name justl--output-process-buffer)
         (error-buffer (justl--process-error-buffer process-name))
-        (cmd (append (list justl-executable justl-args (justl--justfile-argument)) args))
+        (cmd (append (list justl-executable (justl--justfile-argument)) args))
         (mode 'justl-compile-mode))
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))
@@ -633,7 +627,6 @@ tweaked further by the user."
     ("-n" "Disable Highlight" "--no-highlight")
     ("-q" "Quiet" "--quiet")
     ("-v" "Verbose output" "--verbose")
-    ("-u" "Unstable" "--unstable")
     (justl--color)
     ]
    ["Actions"
@@ -717,7 +710,7 @@ tweaked further by the user."
   (let* ((justfiles (justl--find-justfiles default-directory))
          (entries (justl--get-recipies-with-desc justfiles)))
     (when (not (eq justl--list-command-exit-code 0) )
-      (error "Just process exited with exit-code %s. Check justfile syntax"
+      (error "Just process exited with exit-code %s.  Check justfile syntax"
                justl--list-command-exit-code))
     (justl--save-line)
     (setq tabulated-list-entries (justl--tabulated-entries entries))

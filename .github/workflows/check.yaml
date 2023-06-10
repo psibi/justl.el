@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         emacs_version:
-          - emacs-release-snapshot
+          - release-snapshot
           - 28.2
           - 27.2
         ignore_warnings:

@@ -71,6 +71,9 @@
            (justl--is-recipe-line-p "# Terraform plan")
            nil))
   (should (equal
+           (justl--is-recipe-line-p "!include lorem.just")
+           nil))
+  (should (equal
            (justl--is-recipe-line-p "push version: (build-cmd version)")
            t))
   (should (equal

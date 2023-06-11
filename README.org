@@ -75,6 +75,9 @@ W => open eshell without executing
 
 * Customize
 
+- Because the help popup is built with transient, you can [[https://www.gnu.org/software/emacs//manual/html_node/transient/Saving-Values.html][set and save
+  your choices]] the same way you would with any other transient
+  dialog.
 - By default, justl searches the executable named *just*, you can
   change the /justl-executable/ variable to set any explicit path.
 - You can also control the width of the RECIPE column in the justl

@@ -484,9 +484,12 @@ and output of process."
 
 (defun justl--get-recipies-with-desc (justfile)
   "Return all the recipies in JUSTFILE with description."
-  (let* ((recipe-status (justl--exec-to-string-with-exit-code
-                         (format "%s --justfile=%s --list --unsorted"
-                                 justl-executable justfile)))
+  (let* ((t-args (transient-args 'justl-help-popup))
+         (recipe-status (justl--exec-to-string-with-exit-code
+                         (format "%s %s --justfile=%s --list --unsorted"
+                                 justl-executable
+                                 (string-join t-args " ")
+                                 justfile)))
          (justl-status (nth 0 recipe-status))
          (recipe-lines (split-string
                         (nth 1 recipe-status)
@@ -627,6 +630,7 @@ tweaked further by the user."
     ("-n" "Disable Highlight" "--no-highlight")
     ("-q" "Quiet" "--quiet")
     ("-v" "Verbose output" "--verbose")
+    ("-u" "Unstable" "--unstable")
     (justl--color)
     ]
    ["Actions"

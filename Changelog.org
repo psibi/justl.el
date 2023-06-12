@@ -1,3 +1,9 @@
+* 0.12
+
+- Add unstable flag to transient.
+- Change justl--justfile to justl-justfile to a safe local defcustom.
+- Drop support for Emacs 26.3
+
 * 0.11
 
 - Implement interactive function ~justl-exec-default-recipe~

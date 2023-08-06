@@ -513,9 +513,19 @@ and output of process."
 (defun justl-exec-recipe-in-dir ()
   "Populate and execute the selected recipe."
   (interactive)
-  (let* ((recipies (completing-read "Recipies: " (justl--get-recipies)
-                                     nil nil nil nil "default")))
-    (justl--exec-without-justfile justl-executable (list recipies))))
+  (let* ((recipe (completing-read "Recipies: " (justl--get-recipies)
+                                     nil nil nil nil "default"))
+	 (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
+	 (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
+    (if recipe-has-args
+	(let* ((cmd-args (justl-jrecipe-args justl-recipe))
+               (user-args (mapcar (lambda (arg) (read-from-minibuffer
+                                                 (format "Just arg for %s:" (justl-jarg-arg arg))
+                                                 (justl--util-maybe (justl-jarg-default arg) "")))
+                                  cmd-args)))
+          (justl--exec-without-justfile justl-executable
+					(cons (justl-jrecipe-name justl-recipe) user-args)))
+      (justl--exec-without-justfile justl-executable (list recipe)))))
 
 (defun justl-exec-default-recipe ()
   "Execute default recipe."

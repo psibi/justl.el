@@ -16,6 +16,7 @@ jobs:
       matrix:
         emacs_version:
           - release-snapshot
+          - 29.1
           - 28.2
           - 27.2
         ignore_warnings:

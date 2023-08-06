@@ -1,3 +1,8 @@
+* Unreleased
+
+- justl-exec-recipe-in-dir prompts for arguments when needed. Fixes
+  [[https://github.com/psibi/justl.el/issues/30][issue 30]].
+
 * 0.12
 
 - Add unstable flag to transient.

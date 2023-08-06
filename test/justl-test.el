@@ -251,6 +251,30 @@
       (should (s-contains? "Available recipes:\n" buf-string))))
   (kill-buffer justl--output-process-buffer))
 
+(ert-deftest justl--execute-interactive-recipe ()
+  "Checks justl-exec-recipe-in-dir indirectly (success case)."
+  (justl--exec-without-justfile "just" (list "plan"))
+  (justl--wait-till-exit justl--output-process-buffer)
+  (with-current-buffer justl--output-process-buffer
+    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+      (should (s-contains? "planner" buf-string)))))
+
+(ert-deftest justl--execute-interactive-recipe-failure ()
+  "Checks justl-exec-recipe-in-dir indrectly (failure case)."
+  (justl--exec-without-justfile "just" (list "plan_non_existent"))
+  (justl--wait-till-exit justl--output-process-buffer)
+  (with-current-buffer justl--output-process-buffer
+    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+      (should (s-contains? "exited abnormally" buf-string)))))
+
+(ert-deftest justl--execute-interactive-recipe-multiple-args ()
+  "Checks justl-exec-recipe-in-dir indrectly (failure case)."
+  (justl--exec-without-justfile "just" (list "push2" "ver1" "ver2"))
+  (justl--wait-till-exit justl--output-process-buffer)
+  (with-current-buffer justl--output-process-buffer
+    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+      (should (s-contains? "ver1" buf-string)))))
+
 ;; (ert "justl--**")
 
 (provide 'justl-test)

@@ -407,7 +407,7 @@ Error matching regexes from compile.el are removed."
   (setq next-error-overlay-arrow-position nil))
 
 (defun justl--exec (process-name args)
-  "Utility function to run commands in the proper context and namespace.
+  "Utility function to run commands in the proper setting.
 
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
 ARGS is a ist of arguments."
@@ -427,7 +427,7 @@ ARGS is a ist of arguments."
                                    :mode mode))))
 
 (defun justl--exec-without-justfile (process-name args)
-  "Utility function to run commands in the proper context and namespace.
+  "Utility function to run commands in the proper setting.
 
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
 ARGS is a ist of arguments."
@@ -462,7 +462,7 @@ CMD is the command string to run. Returns a list with status code
 and output of process."
   (justl--log-command "just-command" cmd)
   (with-temp-buffer
-    (let ((justl-status (call-process-shell-command cmd nil t))
+    (let ((justl-status (process-file-shell-command cmd nil t))
           (buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (list justl-status buf-string))))
 
@@ -475,7 +475,7 @@ and output of process."
 
 (defun justl--justfile-argument ()
   "Provides justfile argument with the proper location."
-  (format "--justfile=%s" justl-justfile))
+  (format "--justfile=%s" (tramp-file-local-name justl-justfile)))
 
 (defun justl--justfile-from-arg (arg)
   "Return justfile filepath from ARG."
@@ -486,10 +486,10 @@ and output of process."
   "Return all the recipies in JUSTFILE with description."
   (let* ((t-args (transient-args 'justl-help-popup))
          (recipe-status (justl--exec-to-string-with-exit-code
-                         (format "%s %s --justfile=%s --list --unsorted"
+                         (format "%s %s --justfile=%s --list --unsorted --color=never"
                                  justl-executable
                                  (string-join t-args " ")
-                                 justfile)))
+                                 (tramp-file-local-name justfile))))
          (justl-status (nth 0 recipe-status))
          (recipe-lines (split-string
                         (nth 1 recipe-status)
@@ -745,7 +745,7 @@ tweaked further by the user."
   (buffer-disable-undo)
   (setq truncate-lines t)
   (let* ((justfiles (justl--find-justfiles default-directory))
-        (entries (justl--get-recipies-with-desc justfiles)))
+         (entries (justl--get-recipies-with-desc justfiles)))
     (if (or (null justfiles) (not (eq justl--list-command-exit-code 0)) )
         (progn
           (when (null justfiles)

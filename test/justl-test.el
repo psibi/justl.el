@@ -278,7 +278,7 @@
       (should (s-contains? "ver1" buf-string))))
   (kill-buffer justl--output-process-buffer))
 
-(ert "justl--**")
+;; (ert "justl--**")
 
 (provide 'justl-test)
 ;;; justl-test.el ends here

@@ -5,7 +5,8 @@
 
 justl.el mode is a major mode for driving [[https://github.com/casey/just][justfiles]]. As compared to
 the [[https://melpa.org/#/just-mode][just-mode]], this mode is built for listing and executing the
-recipes in the justfile via the [[https://magit.vc/manual/transient][transient]] keymaps.
+recipes in the justfile via the [[https://magit.vc/manual/transient][transient]] keymaps. Also works with
+[[https://www.gnu.org/software/tramp/][TRAMP]].
 
 [[https://user-images.githubusercontent.com/737477/132949123-87387b7e-8f7d-45de-ac32-8815d9c1dc5d.png]]
 

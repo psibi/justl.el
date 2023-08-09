@@ -7,6 +7,7 @@
 - Improve error handling when a justfile is not found on different
   cases.
 - Add documentation on how to test it with TRAMP and docker.
+- Update CI to support Emacs 29.1
 
 * 0.12
 

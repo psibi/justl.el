@@ -24,7 +24,7 @@
 ;; Keywords: just justfile tools processes
 ;; URL: https://github.com/psibi/justl.el
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((transient "0.1.0") (emacs "25.3") (s "1.2.0") (f "0.20.0"))
+;; Package-Requires: ((transient "0.1.0") (emacs "27.1") (s "1.2.0") (f "0.20.0"))
 
 ;;; Commentary:
 

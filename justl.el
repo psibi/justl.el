@@ -207,7 +207,7 @@ was found."
                     dir)))
     (if justfiles
         (car justfiles)
-      (let ((justfile-paths (directory-files-recursively dir "justfile")))
+      (let ((justfile-paths (directory-files-recursively dir justl--justfile-regex)))
         (if justfile-paths
             (car justfile-paths)
           nil)))))
@@ -734,6 +734,9 @@ tweaked further by the user."
 (defun justl ()
   "Invoke the justl buffer."
   (interactive)
+  (let ((justfile (justl--find-justfiles default-directory)))
+    (when (null justfile)
+      (error "No justfiles found")))
   (justl--save-line)
   (justl--pop-to-buffer (justl--buffer-name))
   (justl-mode))
@@ -743,7 +746,7 @@ tweaked further by the user."
   (buffer-disable-undo)
   (setq truncate-lines t)
   (let* ((justfiles (justl--find-justfiles default-directory))
-         (entries (justl--get-recipies-with-desc justfiles)))
+	 (entries (justl--get-recipies-with-desc justfiles)))
     (if (or (null justfiles) (not (eq justl--list-command-exit-code 0)) )
         (progn
           (when (null justfiles)

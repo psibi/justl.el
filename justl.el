@@ -76,6 +76,7 @@
 (require 'compile)
 (require 'comint)
 (require 'subr-x)
+(require 'tramp)
 
 (defgroup justl nil
   "Justfile customization group."

@@ -12,7 +12,7 @@
   (should (equal
            (list "default" "build-cmd" "plan" "push" "push2" "fail" "carriage-return"
                  "color")
-           (justl--get-recipies))))
+           (justl--get-recipies "./justfile"))))
 
 (ert-deftest justl--list-to-recipe-test ()
   (should (equal
@@ -257,7 +257,8 @@
   (justl--wait-till-exit justl--output-process-buffer)
   (with-current-buffer justl--output-process-buffer
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
-      (should (s-contains? "planner" buf-string)))))
+      (should (s-contains? "planner" buf-string))))
+  (kill-buffer justl--output-process-buffer))
 
 (ert-deftest justl--execute-interactive-recipe-failure ()
   "Checks justl-exec-recipe-in-dir indrectly (failure case)."
@@ -265,7 +266,8 @@
   (justl--wait-till-exit justl--output-process-buffer)
   (with-current-buffer justl--output-process-buffer
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
-      (should (s-contains? "exited abnormally" buf-string)))))
+      (should (s-contains? "exited abnormally" buf-string))))
+  (kill-buffer justl--output-process-buffer))
 
 (ert-deftest justl--execute-interactive-recipe-multiple-args ()
   "Checks justl-exec-recipe-in-dir indrectly (failure case)."
@@ -273,7 +275,8 @@
   (justl--wait-till-exit justl--output-process-buffer)
   (with-current-buffer justl--output-process-buffer
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
-      (should (s-contains? "ver1" buf-string)))))
+      (should (s-contains? "ver1" buf-string))))
+  (kill-buffer justl--output-process-buffer))
 
 ;; (ert "justl--**")
 

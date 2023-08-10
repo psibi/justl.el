@@ -1,0 +1,26 @@
+* Testing tramp
+
+- Create a local docker image
+
+#+begin_src sh
+docker image build . -f Dockerfile -t just-test
+#+end_src
+
+- Run the container:
+
+#+begin_src sh
+docker run -it just-test bash
+#+end_src
+
+- Now do the followin in emacs:
+
+#+begin_src sh
+M-x docker-container
+#+end_src
+
+Go to the container that is running and get shell access. Once you get
+shell access, run the usual justl commands there:
+
+#+begin_src
+justl-exec-recipe-in-dir
+#+end_src

@@ -1,7 +1,13 @@
 * Unreleased
 
-- justl-exec-recipe-in-dir prompts for arguments when needed. Fixes
+- TRAMP support
+- ~justl-exec-recipe-in-dir~ prompts for arguments when needed. Fixes
   [[https://github.com/psibi/justl.el/issues/30][issue 30]].
+- Fix directory traversing when searching for justfiles.
+- Improve error handling when a justfile is not found on different
+  cases.
+- Add documentation on how to test it with TRAMP and docker.
+- Update CI to support Emacs 29.1
 
 * 0.12
 

@@ -24,7 +24,7 @@
 ;; Keywords: just justfile tools processes
 ;; URL: https://github.com/psibi/justl.el
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((transient "0.1.0") (emacs "25.3") (s "1.2.0") (f "0.20.0"))
+;; Package-Requires: ((transient "0.1.0") (emacs "27.1") (s "1.2.0") (f "0.20.0"))
 
 ;;; Commentary:
 
@@ -76,6 +76,7 @@
 (require 'compile)
 (require 'comint)
 (require 'subr-x)
+(require 'tramp)
 
 (defgroup justl nil
   "Justfile customization group."
@@ -207,7 +208,7 @@ was found."
                     dir)))
     (if justfiles
         (car justfiles)
-      (let ((justfile-paths (directory-files-recursively dir "justfile")))
+      (let ((justfile-paths (directory-files-recursively dir justl--justfile-regex)))
         (if justfile-paths
             (car justfile-paths)
           nil)))))
@@ -407,7 +408,7 @@ Error matching regexes from compile.el are removed."
   (setq next-error-overlay-arrow-position nil))
 
 (defun justl--exec (process-name args)
-  "Utility function to run commands in the proper context and namespace.
+  "Utility function to run commands in the proper setting.
 
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
 ARGS is a ist of arguments."
@@ -427,7 +428,7 @@ ARGS is a ist of arguments."
                                    :mode mode))))
 
 (defun justl--exec-without-justfile (process-name args)
-  "Utility function to run commands in the proper context and namespace.
+  "Utility function to run commands in the proper setting.
 
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
 ARGS is a ist of arguments."
@@ -462,20 +463,20 @@ CMD is the command string to run. Returns a list with status code
 and output of process."
   (justl--log-command "just-command" cmd)
   (with-temp-buffer
-    (let ((justl-status (call-process-shell-command cmd nil t))
+    (let ((justl-status (process-file-shell-command cmd nil t))
           (buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (list justl-status buf-string))))
 
-(defun justl--get-recipies ()
-  "Return all the recipies."
+(defun justl--get-recipies (justfile)
+  "Return all the recipies from JUSTFILE."
   (let ((recipies (split-string (justl--exec-to-string
-                                 (format "%s --summary --unsorted"
-                                         justl-executable)))))
+                                 (format "%s --justfile=%s --summary --unsorted --color=never"
+                                         justl-executable (tramp-file-local-name justfile))))))
     (mapcar #'string-trim-right recipies)))
 
 (defun justl--justfile-argument ()
   "Provides justfile argument with the proper location."
-  (format "--justfile=%s" justl-justfile))
+  (format "--justfile=%s" (tramp-file-local-name justl-justfile)))
 
 (defun justl--justfile-from-arg (arg)
   "Return justfile filepath from ARG."
@@ -486,10 +487,10 @@ and output of process."
   "Return all the recipies in JUSTFILE with description."
   (let* ((t-args (transient-args 'justl-help-popup))
          (recipe-status (justl--exec-to-string-with-exit-code
-                         (format "%s %s --justfile=%s --list --unsorted"
+                         (format "%s %s --justfile=%s --list --unsorted --color=never"
                                  justl-executable
                                  (string-join t-args " ")
-                                 justfile)))
+                                 (tramp-file-local-name justfile))))
          (justl-status (nth 0 recipe-status))
          (recipe-lines (split-string
                         (nth 1 recipe-status)
@@ -501,11 +502,6 @@ and output of process."
         (mapcar (lambda (x) (list (justl--get-recipe-name (nth 0 x)) (nth 1 x))) recipes)
       nil)))
 
-(defun justl--get-jrecipies ()
-  "Return list of JRECIPE."
-  (let ((recipies (justl--get-recipies)))
-    (mapcar #'make-justl-jrecipe recipies)))
-
 (defun justl--list-to-jrecipe (list)
   "Convert a single LIST of two elements to list of JRECIPE."
   (make-justl-jrecipe :name (nth 0 list) :args (nth 1 list)))
@@ -513,19 +509,22 @@ and output of process."
 (defun justl-exec-recipe-in-dir ()
   "Populate and execute the selected recipe."
   (interactive)
-  (let* ((recipe (completing-read "Recipies: " (justl--get-recipies)
-                                     nil nil nil nil "default"))
-	 (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
-	 (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
-    (if recipe-has-args
-	(let* ((cmd-args (justl-jrecipe-args justl-recipe))
-               (user-args (mapcar (lambda (arg) (read-from-minibuffer
-                                                 (format "Just arg for %s:" (justl-jarg-arg arg))
-                                                 (justl--util-maybe (justl-jarg-default arg) "")))
-                                  cmd-args)))
-          (justl--exec-without-justfile justl-executable
-					(cons (justl-jrecipe-name justl-recipe) user-args)))
-      (justl--exec-without-justfile justl-executable (list recipe)))))
+  (let* ((justfile (justl--find-justfiles default-directory)))
+    (if (not justfile)
+	(error "No justfiles found"))
+    (let* ((recipe (completing-read "Recipies: " (justl--get-recipies justfile)
+                                    nil nil nil nil "default"))
+	   (justl-recipe (justl--get-recipe-from-file justfile recipe))
+	   (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
+      (if recipe-has-args
+	  (let* ((cmd-args (justl-jrecipe-args justl-recipe))
+		 (user-args (mapcar (lambda (arg) (read-from-minibuffer
+                                                   (format "Just arg for %s:" (justl-jarg-arg arg))
+                                                   (justl--util-maybe (justl-jarg-default arg) "")))
+                                    cmd-args)))
+            (justl--exec-without-justfile justl-executable
+					  (cons (justl-jrecipe-name justl-recipe) user-args)))
+	(justl--exec-without-justfile justl-executable (list recipe))))))
 
 (defun justl-exec-default-recipe ()
   "Execute default recipe."
@@ -736,6 +735,9 @@ tweaked further by the user."
 (defun justl ()
   "Invoke the justl buffer."
   (interactive)
+  (let ((justfile (justl--find-justfiles default-directory)))
+    (when (null justfile)
+      (error "No justfiles found")))
   (justl--save-line)
   (justl--pop-to-buffer (justl--buffer-name))
   (justl-mode))
@@ -745,7 +747,7 @@ tweaked further by the user."
   (buffer-disable-undo)
   (setq truncate-lines t)
   (let* ((justfiles (justl--find-justfiles default-directory))
-        (entries (justl--get-recipies-with-desc justfiles)))
+	 (entries (justl--get-recipies-with-desc justfiles)))
     (if (or (null justfiles) (not (eq justl--list-command-exit-code 0)) )
         (progn
           (when (null justfiles)

@@ -1,4 +1,4 @@
-* Unreleased
+* 0.13
 
 - TRAMP support
 - ~justl-exec-recipe-in-dir~ prompts for arguments when needed. Fixes

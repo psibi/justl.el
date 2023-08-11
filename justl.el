@@ -200,10 +200,7 @@ It searches either for the filename justfile or .justfile"
 
 (defun justl--get-recipe-name (str)
   "Compute the recipe name from the string STR."
-  (let ((trim-str (s-trim str)))
-    (if (s-contains? " " trim-str)
-        (car (split-string trim-str " "))
-      trim-str)))
+  (car (split-string (s-trim str) " ")))
 
 (defun justl--arg-to-jarg (str)
   "Convert single positional argument string STR to JARG."
@@ -215,18 +212,15 @@ It searches either for the filename justfile or .justfile"
 
 The string after the recipe name and before the build constraints
 is expected."
-  (if (and (not (s-blank? str)) str)
-      (let* ((args (s-split " " str)))
-        (mapcar #'justl--arg-to-jarg args))
-      nil))
+  (when (and (not (s-blank? str)) str)
+    (let* ((args (s-split " " str)))
+      (mapcar #'justl--arg-to-jarg args))))
 
 (defun justl--process-recipe-name (str)
   "Process and perform transformation on recipe name.
 
 STR reprents the recipe name.  Returns processed recipe name."
-  (if (s-starts-with? "@" str)
-      (s-chop-prefix "@" str)
-    str))
+  (s-chop-prefix "@" str))
 
 (defun justl--parse-recipe (str)
   "Parse a entire recipe line.
@@ -257,10 +251,10 @@ CMD is the just command as a list."
         (exit-status (process-exit-status process)))
     (with-current-buffer (get-buffer justl--output-process-buffer)
       (goto-char (point-max))
-      (if (eq exit-status 0)
+      (if (zerop exit-status)
           (insert (format "\nTarget execution finished at %s" (substring (current-time-string) 0 19)))
         (insert (format "\nTarget execution exited abnormally with code %s at %s" exit-status (substring (current-time-string) 0 19)))))
-    (unless (eq 0 exit-status)
+    (unless (zerop exit-status)
       (let ((err (with-current-buffer (get-buffer-create (justl--process-error-buffer process-name))
                    (buffer-string))))
         (justl--append-to-process-buffer
@@ -455,7 +449,7 @@ and output of process."
 (defun justl--justfile-from-arg (arg)
   "Return justfile filepath from ARG."
   (when arg
-    (car (cdr (s-split "--justfile=" arg)))))
+    (cadr (s-split "--justfile=" arg))))
 
 (defun justl--get-recipies-with-desc (justfile)
   "Return all the recipies in JUSTFILE with description."
@@ -472,9 +466,8 @@ and output of process."
          (recipes (mapcar (lambda (x) (split-string x "# "))
                           (cdr (seq-filter (lambda (x) (s-present? x)) recipe-lines)))))
     (setq justl--list-command-exit-code justl-status)
-    (if (eq (nth 0 recipe-status) 0)
-        (mapcar (lambda (x) (list (justl--get-recipe-name (nth 0 x)) (nth 1 x))) recipes)
-      nil)))
+    (when (eq (nth 0 recipe-status) 0)
+      (mapcar (lambda (x) (list (justl--get-recipe-name (nth 0 x)) (nth 1 x))) recipes))))
 
 (defun justl--list-to-jrecipe (list)
   "Convert a single LIST of two elements to list of JRECIPE."
@@ -546,18 +539,16 @@ Populates the eshell buffer with RECIPE name so that it can be
 tweaked further by the user."
   (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe))
          (default-directory (f-dirname justl-justfile)))
-    (progn
-      (eshell)
-      (insert (format "just %s" recipe)))))
+    (eshell)
+    (insert (format "just %s" recipe))))
 
 (defun justl--exec-with-eshell (recipe)
   "Opens eshell buffer and execute the just RECIPE."
   (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe))
          (default-directory (f-dirname justl-justfile)))
-    (progn
-      (eshell)
-      (insert (format "just %s" recipe))
-      (eshell-send-input))))
+    (eshell)
+    (insert (format "just %s" recipe))
+    (eshell-send-input)))
 
 (defun justl-exec-eshell ()
   "Execute just recipe in eshell."
@@ -709,9 +700,8 @@ tweaked further by the user."
 (defun justl ()
   "Invoke the justl buffer."
   (interactive)
-  (let ((justfile (justl--find-justfiles default-directory)))
-    (when (null justfile)
-      (error "No justfiles found")))
+  (unless (justl--find-justfiles default-directory)
+    (error "No justfiles found"))
   (justl--save-line)
   (justl--pop-to-buffer (justl--buffer-name))
   (justl-mode))
@@ -722,7 +712,7 @@ tweaked further by the user."
   (setq truncate-lines t)
   (let* ((justfiles (justl--find-justfiles default-directory))
 	 (entries (justl--get-recipies-with-desc justfiles)))
-    (if (or (null justfiles) (not (eq justl--list-command-exit-code 0)) )
+    (if (or (null justfiles) (not (zerop justl--list-command-exit-code)) )
         (progn
           (when (null justfiles)
             (message "No justfiles found"))

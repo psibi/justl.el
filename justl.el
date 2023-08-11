@@ -133,9 +133,7 @@ other cases, it's a known path."
   "Utility function to pop to buffer or create it.
 
 NAME is the buffer name."
-  (unless (get-buffer name)
-    (get-buffer-create name))
-  (pop-to-buffer-same-window name))
+  (pop-to-buffer-same-window (get-buffer-create name)))
 
 (defvar justl--last-command nil)
 

@@ -101,7 +101,7 @@ finished and what it's exit status code looks like.
 - Add ability to turn off color in the output. Useful for eshell
   integration which doesn't recognize color without additional setup.
 
-- Integration with eshell done. You can now execute the recipies in
+- Integration with eshell done. You can now execute the recipes in
   either eshell or open eshell and give positional arguments etc for
   the recipe before executing it. The key binding for it is *E* and
   *W*.

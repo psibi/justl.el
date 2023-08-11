@@ -435,12 +435,12 @@ and output of process."
           (buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (list justl-status buf-string))))
 
-(defun justl--get-recipies (justfile)
-  "Return all the recipies from JUSTFILE."
-  (let ((recipies (split-string (justl--exec-to-string
+(defun justl--get-recipes (justfile)
+  "Return all the recipes from JUSTFILE."
+  (let ((recipes (split-string (justl--exec-to-string
                                  (format "%s --justfile=%s --summary --unsorted --color=never"
                                          justl-executable (tramp-file-local-name justfile))))))
-    (mapcar #'string-trim-right recipies)))
+    (mapcar #'string-trim-right recipes)))
 
 (defun justl--justfile-argument ()
   "Provides justfile argument with the proper location."
@@ -451,8 +451,8 @@ and output of process."
   (when arg
     (cadr (s-split "--justfile=" arg))))
 
-(defun justl--get-recipies-with-desc (justfile)
-  "Return all the recipies in JUSTFILE with description."
+(defun justl--get-recipes-with-desc (justfile)
+  "Return all the recipes in JUSTFILE with description."
   (let* ((t-args (transient-args 'justl-help-popup))
          (recipe-status (justl--exec-to-string-with-exit-code
                          (format "%s %s --justfile=%s --list --unsorted --color=never"
@@ -479,7 +479,7 @@ and output of process."
   (let* ((justfile (justl--find-justfiles default-directory)))
     (if (not justfile)
 	(error "No justfiles found"))
-    (let* ((recipe (completing-read "Recipies: " (justl--get-recipies justfile)
+    (let* ((recipe (completing-read "Recipes: " (justl--get-recipes justfile)
                                     nil nil nil nil "default"))
 	   (justl-recipe (justl--get-recipe-from-file justfile recipe))
 	   (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
@@ -527,11 +527,11 @@ and output of process."
       (setq justl--line-number (+ 1 (count-lines 1 (point))))
     (setq justl--line-number nil)))
 
-(defun justl--tabulated-entries (recipies)
-  "Turn RECIPIES to tabulated entries."
+(defun justl--tabulated-entries (recipes)
+  "Turn RECIPES to tabulated entries."
   (mapcar (lambda (x)
-               (list nil (vector (nth 0 x) (justl--util-maybe (nth 1 x) ""))))
-          recipies))
+            (list nil (vector (nth 0 x) (justl--util-maybe (nth 1 x) ""))))
+          recipes))
 
 (defun justl--no-exec-with-eshell (recipe)
   "Opens eshell buffer but does not execute it.
@@ -686,7 +686,7 @@ tweaked further by the user."
   "Refresh justl buffer."
   (interactive)
   (let* ((justfiles (justl--find-justfiles default-directory))
-         (entries (justl--get-recipies-with-desc justfiles)))
+         (entries (justl--get-recipes-with-desc justfiles)))
     (when (not (eq justl--list-command-exit-code 0) )
       (error "Just process exited with exit-code %s.  Check justfile syntax"
                justl--list-command-exit-code))
@@ -711,7 +711,7 @@ tweaked further by the user."
   (buffer-disable-undo)
   (setq truncate-lines t)
   (let* ((justfiles (justl--find-justfiles default-directory))
-	 (entries (justl--get-recipies-with-desc justfiles)))
+	 (entries (justl--get-recipes-with-desc justfiles)))
     (if (or (null justfiles) (not (zerop justl--list-command-exit-code)) )
         (progn
           (when (null justfiles)
@@ -720,7 +720,7 @@ tweaked further by the user."
             (message "Just process exited with exit-code %s"
                      justl--list-command-exit-code)))
       (setq tabulated-list-format
-            (vector (list "RECIPIES" justl-recipe-width t)
+            (vector (list "RECIPES" justl-recipe-width t)
                     (list "DESCRIPTION" 20 t)))
       (setq tabulated-list-entries (justl--tabulated-entries entries))
       (setq tabulated-list-sort-key nil)

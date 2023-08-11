@@ -8,11 +8,11 @@
 (require 'ert)
 (require 'f)
 
-(ert-deftest justl--get-recipies-test ()
+(ert-deftest justl--get-recipes-test ()
   (should (equal
            (list "default" "build-cmd" "plan" "push" "push2" "fail" "carriage-return"
                  "color")
-           (justl--get-recipies "./justfile"))))
+           (justl--get-recipes "./justfile"))))
 
 (ert-deftest justl--list-to-recipe-test ()
   (should (equal
@@ -208,12 +208,12 @@
 (ert-deftest justl--find-justfiles-check ()
   (should (equal (f-filename (justl--find-justfiles default-directory)) "justfile")))
 
-(ert-deftest justl--get-recipies-with-desc-check ()
+(ert-deftest justl--get-recipes-with-desc-check ()
   (let* ((justfile (justl--find-justfiles default-directory))
-         (recipies (justl--get-recipies-with-desc justfile)))
-    (should (member (list "default" "List all recipies") recipies))
-    (should (member (list "push" nil) recipies))
-    (should (member (list "push2" nil) recipies))))
+         (recipes (justl--get-recipes-with-desc justfile)))
+    (should (member (list "default" "List all recipes") recipes))
+    (should (member (list "push" nil) recipes))
+    (should (member (list "push2" nil) recipes))))
 
 (ert-deftest justl--execute-recipe-which-prints-carriage-return ()
   "Carriage return should be handled in a way that allows overwriting lines."

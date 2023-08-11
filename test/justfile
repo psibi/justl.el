@@ -1,6 +1,6 @@
 test-variable := "0.2.7"
 
-# List all recipies
+# List all recipes
 default:
     just --list --color never
 

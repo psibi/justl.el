@@ -99,7 +99,7 @@
 (defcustom justl-justfile nil
   "Buffer local variable which points to the justfile.
 
-If this is NIL, it means that no justfiles was found.  In any
+If this is NIL, it means that no justfile was found.  In any
 other cases, it's a known path."
   :type 'string
   :local t
@@ -178,8 +178,8 @@ NAME is the buffer name."
       (insert (format "%s\n" str))
       (read-only-mode nil))))
 
-(defun justl--find-any-justfiles (dir)
-  "Find justfiles inside a sub-directory DIR or a parent directory.
+(defun justl--find-any-justfile (dir)
+  "Find justfile inside a sub-directory DIR or a parent directory.
 
 Returns the absolute path if file exists or nil if no path
 was found."
@@ -189,12 +189,12 @@ was found."
     (when-let ((location (locate-dominating-file dir #'any-justfile)))
       (expand-file-name (any-justfile location) location))))
 
-(defun justl--find-justfiles (dir)
-  "Find justfiles inside a sub-directory DIR or a parent directory.
+(defun justl--find-justfile (dir)
+  "Find justfile inside a sub-directory DIR or a parent directory.
 
 DIR represents the directory where search will be carried out.
 It searches either for the filename justfile or .justfile"
-  (when-let ((justfile-path (justl--find-any-justfiles dir)))
+  (when-let ((justfile-path (justl--find-any-justfile dir)))
     (setq-local justl-justfile justfile-path)
     justfile-path))
 
@@ -476,9 +476,9 @@ and output of process."
 (defun justl-exec-recipe-in-dir ()
   "Populate and execute the selected recipe."
   (interactive)
-  (let* ((justfile (justl--find-justfiles default-directory)))
+  (let* ((justfile (justl--find-justfile default-directory)))
     (if (not justfile)
-	(error "No justfiles found"))
+	(error "No justfile found"))
     (let* ((recipe (completing-read "Recipes: " (justl--get-recipes justfile)
                                     nil nil nil nil "default"))
 	   (justl-recipe (justl--get-recipe-from-file justfile recipe))
@@ -513,7 +513,7 @@ and output of process."
 
 (defun justl--buffer-name ()
   "Return justl buffer name."
-  (let ((justfile (justl--find-justfiles default-directory)))
+  (let ((justfile (justl--find-justfile default-directory)))
     (format "*just [%s]*"
             (f-dirname justfile))))
 
@@ -685,8 +685,8 @@ tweaked further by the user."
 (defun justl--refresh-buffer ()
   "Refresh justl buffer."
   (interactive)
-  (let* ((justfiles (justl--find-justfiles default-directory))
-         (entries (justl--get-recipes-with-desc justfiles)))
+  (let* ((justfile (justl--find-justfile default-directory))
+         (entries (justl--get-recipes-with-desc justfile)))
     (when (not (eq justl--list-command-exit-code 0) )
       (error "Just process exited with exit-code %s.  Check justfile syntax"
                justl--list-command-exit-code))
@@ -700,8 +700,8 @@ tweaked further by the user."
 (defun justl ()
   "Invoke the justl buffer."
   (interactive)
-  (unless (justl--find-justfiles default-directory)
-    (error "No justfiles found"))
+  (unless (justl--find-justfile default-directory)
+    (error "No justfile found"))
   (justl--save-line)
   (justl--pop-to-buffer (justl--buffer-name))
   (justl-mode))
@@ -710,12 +710,12 @@ tweaked further by the user."
   "Special mode for justl buffers."
   (buffer-disable-undo)
   (setq truncate-lines t)
-  (let* ((justfiles (justl--find-justfiles default-directory))
-	 (entries (justl--get-recipes-with-desc justfiles)))
-    (if (or (null justfiles) (not (zerop justl--list-command-exit-code)) )
+  (let* ((justfile (justl--find-justfile default-directory))
+	 (entries (justl--get-recipes-with-desc justfile)))
+    (if (or (null justfile) (not (zerop justl--list-command-exit-code)) )
         (progn
-          (when (null justfiles)
-            (message "No justfiles found"))
+          (unless justfile
+            (message "No justfile found"))
           (when (not (eq justl--list-command-exit-code 0) )
             (message "Just process exited with exit-code %s"
                      justl--list-command-exit-code)))
@@ -727,7 +727,7 @@ tweaked further by the user."
       (tabulated-list-init-header)
       (tabulated-list-print t)
       (hl-line-mode 1)
-      (message (concat "Just: " (f-dirname justfiles))))))
+      (message (concat "Just: " (f-dirname justfile))))))
 
 (provide 'justl)
 ;;; justl.el ends here

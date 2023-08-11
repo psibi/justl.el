@@ -205,11 +205,11 @@
   (kill-buffer (justl--buffer-name))
   (kill-buffer justl--output-process-buffer))
 
-(ert-deftest justl--find-justfiles-check ()
-  (should (equal (f-filename (justl--find-justfiles default-directory)) "justfile")))
+(ert-deftest justl--find-justfile-check ()
+  (should (equal (f-filename (justl--find-justfile default-directory)) "justfile")))
 
 (ert-deftest justl--get-recipes-with-desc-check ()
-  (let* ((justfile (justl--find-justfiles default-directory))
+  (let* ((justfile (justl--find-justfile default-directory))
          (recipes (justl--get-recipes-with-desc justfile)))
     (should (member (list "default" "List all recipes") recipes))
     (should (member (list "push" nil) recipes))

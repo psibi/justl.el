@@ -158,9 +158,6 @@ NAME is the buffer name."
 (defconst justl--compilation-process-name "just-compilation-process"
   "Process name for just compilation process.")
 
-(defconst justl--justfile-regex "[Jj][Uu][sS][tT][fF][iI][lL][eE]"
-  "Justfile name.")
-
 (defun justl--is-variable-p (str)
   "Check if string STR is a just variable."
   (s-contains? ":=" str))
@@ -181,48 +178,25 @@ NAME is the buffer name."
       (insert (format "%s\n" str))
       (read-only-mode nil))))
 
-
-(defun justl--traverse-upwards (fn &optional path)
-  "Traverse up as long as FN return nil, starting at PATH.
-
-Variant of f.el's 'f-traverse-upwards but returns justfiles."
-  (unless path
-    (setq path default-directory))
-  (when (f-relative? path)
-    (setq path (f-expand path)))
-  (let ((result (funcall fn path)))
-     (if result
-         result
-       (unless (f-root? path)
-      (justl--traverse-upwards fn (f-parent path))))))
-
 (defun justl--find-any-justfiles (dir)
   "Find justfiles inside a sub-directory DIR or a parent directory.
 
 Returns the absolute path if file exists or nil if no path
 was found."
-  (let ((case-fold-search t)
-        (justfiles (justl--traverse-upwards
-                    (lambda (path)
-                      (directory-files path t justl--justfile-regex))
-                    dir)))
-    (if justfiles
-        (car justfiles)
-      (let ((justfile-paths (directory-files-recursively dir justl--justfile-regex)))
-        (if justfile-paths
-            (car justfile-paths)
-          nil)))))
+  (cl-flet*
+      ((is-justfile (s) (string= "justfile" (downcase s)))
+       (any-justfile (d) (seq-find #'is-justfile (directory-files d))))
+    (when-let ((location (locate-dominating-file dir #'any-justfile)))
+      (expand-file-name (any-justfile location) location))))
 
 (defun justl--find-justfiles (dir)
   "Find justfiles inside a sub-directory DIR or a parent directory.
 
 DIR represents the directory where search will be carried out.
 It searches either for the filename justfile or .justfile"
-  (let ((justfile-path (justl--find-any-justfiles dir)))
-    (if justfile-path
-        (progn
-          (setq-local justl-justfile justfile-path)
-          justfile-path))))
+  (when-let ((justfile-path (justl--find-any-justfiles dir)))
+    (setq-local justl-justfile justfile-path)
+    justfile-path))
 
 (defun justl--get-recipe-name (str)
   "Compute the recipe name from the string STR."

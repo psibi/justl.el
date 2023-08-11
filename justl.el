@@ -514,7 +514,7 @@ and output of process."
 (defun justl--buffer-name ()
   "Return justl buffer name."
   (let ((justfile (justl--find-justfiles default-directory)))
-    (format "*just [%s]"
+    (format "*just [%s]*"
             (f-dirname justfile))))
 
 (defvar justl--line-number nil

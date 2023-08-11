@@ -154,11 +154,10 @@ NAME is the buffer name."
 
 (defun justl--is-recipe-line-p (str)
   "Check if string STR is a recipe line."
-  (let* ((string (or str "")))
-    (if (string-match "\\`[ \t\n\r]+" string)
-        nil
-      (and (not (justl--is-variable-p string))
-           (s-contains? ":" string)))))
+  (and str
+       (not (string-match "\\`[ \t\n\r]+" str))
+       (not (justl--is-variable-p str))
+       (s-contains? ":" str)))
 
 (defun justl--append-to-process-buffer (str)
   "Append string STR to the process buffer."

@@ -259,14 +259,12 @@ STRING is the data returned by the PROC"
   (when (buffer-live-p (process-buffer proc))
     (with-current-buffer (process-buffer proc)
       (let ((inhibit-read-only t))
-        (unwind-protect
-            (progn
-              (widen)
-              (goto-char (marker-position (process-mark proc)))
-              (insert string)
-              (comint-carriage-motion (process-mark proc) (point))
-              (ansi-color-apply-on-region (process-mark proc) (point))
-              (set-marker (process-mark proc) (point))))))))
+        (widen)
+        (goto-char (marker-position (process-mark proc)))
+        (insert string)
+        (comint-carriage-motion (process-mark proc) (point))
+        (ansi-color-apply-on-region (process-mark proc) (point))
+        (set-marker (process-mark proc) (point))))))
 
 (defun justl-compilation-setup-buffer (buf dir mode &optional no-mode-line)
   "Setup the compilation buffer for just-compile-mode.

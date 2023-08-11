@@ -113,24 +113,16 @@ other cases, it's a known path."
   "Check if JRECIPE has any arguments."
   (justl-jrecipe-args jrecipe))
 
-(defun justl--util-maybe (maybe default)
-  "Return the DEFAULT value if MAYBE is null.
-
-Similar to the fromMaybe function in the Haskell land."
-  (if (null maybe)
-  default
-  maybe))
-
 (defun justl--arg-to-str (jarg)
   "Convert JARG to just's positional argument."
   (format "%s=%s"
           (justl-jarg-arg jarg)
-          (justl--util-maybe (justl-jarg-default jarg) "")))
+          (or (justl-jarg-default jarg) "")))
 
 (defun justl--jrecipe-get-args (jrecipe)
   "Convert JRECIPE arguments to list of positional arguments."
   (let* ((recipe-args (justl-jrecipe-args jrecipe))
-         (args (justl--util-maybe recipe-args nil)))
+         (args recipe-args))
     (mapcar #'justl--arg-to-str args)))
 
 (defun justl--process-error-buffer (process-name)
@@ -164,7 +156,7 @@ NAME is the buffer name."
 
 (defun justl--is-recipe-line-p (str)
   "Check if string STR is a recipe line."
-  (let* ((string (justl--util-maybe str "")))
+  (let* ((string (or str "")))
     (if (string-match "\\`[ \t\n\r]+" string)
         nil
       (and (not (justl--is-variable-p string))
@@ -487,7 +479,7 @@ and output of process."
 	  (let* ((cmd-args (justl-jrecipe-args justl-recipe))
 		 (user-args (mapcar (lambda (arg) (read-from-minibuffer
                                                    (format "Just arg for %s:" (justl-jarg-arg arg))
-                                                   (justl--util-maybe (justl-jarg-default arg) "")))
+                                                   (or (justl-jarg-default arg) "")))
                                     cmd-args)))
             (justl--exec-without-justfile justl-executable
 					  (cons (justl-jrecipe-name justl-recipe) user-args)))
@@ -530,7 +522,7 @@ and output of process."
 (defun justl--tabulated-entries (recipes)
   "Turn RECIPES to tabulated entries."
   (mapcar (lambda (x)
-            (list nil (vector (nth 0 x) (justl--util-maybe (nth 1 x) ""))))
+            (list nil (vector (nth 0 x) (or (nth 1 x) ""))))
           recipes))
 
 (defun justl--no-exec-with-eshell (recipe)
@@ -560,7 +552,7 @@ tweaked further by the user."
     (if recipe-has-args
         (let* ((cmd-args (justl-jrecipe-args justl-recipe))
                (user-args (mapcar (lambda (arg)
-                                    (format "%s " (justl--util-maybe (justl-jarg-default arg) "")))
+                                    (format "%s " (or (justl-jarg-default arg) "")))
                                   cmd-args)))
           (justl--no-exec-with-eshell
            (string-join (append t-args
@@ -578,7 +570,7 @@ tweaked further by the user."
     (if recipe-has-args
         (let* ((cmd-args (justl-jrecipe-args justl-recipe))
                (user-args (mapcar (lambda (arg)
-                                    (format "%s " (justl--util-maybe (justl-jarg-default arg) "")))
+                                    (format "%s " (or (justl-jarg-default arg) "")))
                                   cmd-args)))
           (justl--no-exec-with-eshell
            (string-join (append t-args
@@ -637,7 +629,7 @@ tweaked further by the user."
         (let* ((cmd-args (justl-jrecipe-args justl-recipe))
                (user-args (mapcar (lambda (arg) (read-from-minibuffer
                                                  (format "Just arg for %s:" (justl-jarg-arg arg))
-                                                 (justl--util-maybe (justl-jarg-default arg) "")))
+                                                 (or (justl-jarg-default arg) "")))
                                   cmd-args)))
           (justl--exec justl-executable
                        (append t-args

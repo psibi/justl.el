@@ -278,17 +278,17 @@ directory and MODE is name of the Emacs mode.  NO-MODE-LINE
 controls if we are going to display the process status on mode line."
   (let ((inhibit-read-only t))
     (with-current-buffer buf
-    (erase-buffer)
-    (setq default-directory dir)
-    (funcall mode)
-    (unless no-mode-line
-      (setq mode-line-process
-            '((:propertize ":%s" face compilation-mode-line-run)
-              compilation-mode-line-errors)))
-    (force-mode-line-update)
-    (if (or compilation-auto-jump-to-first-error
-            (eq compilation-scroll-output 'first-error))
-        (set (make-local-variable 'compilation-auto-jump-to-next) t)))))
+      (erase-buffer)
+      (setq default-directory dir)
+      (funcall mode)
+      (unless no-mode-line
+        (setq mode-line-process
+              '((:propertize ":%s" face compilation-mode-line-run)
+                compilation-mode-line-errors)))
+      (force-mode-line-update)
+      (if (or compilation-auto-jump-to-first-error
+              (eq compilation-scroll-output 'first-error))
+          (set (make-local-variable 'compilation-auto-jump-to-next) t)))))
 
 (defvar justl--compile-command nil
   "Last shell command used to do a compilation; default for next compilation.")
@@ -348,10 +348,10 @@ ARGS is a plist that affects how the process is run.
     ("^Target execution \\(finished\\).*"
      (0 '(face nil compilation-message nil help-echo nil mouse-face nil) t)
      (1 compilation-info-face))
-        ("^Target execution \\(exited abnormally\\)\\(?:.*with code \\([0-9]+\\)\\)?.*"
-      (0 '(face nil compilation-message nil help-echo nil mouse-face nil) t)
-      (1 compilation-error-face)
-      (2 compilation-error-face nil t)))
+    ("^Target execution \\(exited abnormally\\)\\(?:.*with code \\([0-9]+\\)\\)?.*"
+     (0 '(face nil compilation-message nil help-echo nil mouse-face nil) t)
+     (1 compilation-error-face)
+     (2 compilation-error-face nil t)))
   "Things to highlight in justl-compile mode.")
 
 (define-compilation-mode justl-compile-mode "just-compile"
@@ -684,7 +684,7 @@ EXECUTABLE so that it can be tweaked further by the user."
          (entries (justl--get-recipes-with-desc justfile)))
     (when (not (eq justl--list-command-exit-code 0) )
       (error "Just process exited with exit-code %s.  Check justfile syntax"
-               justl--list-command-exit-code))
+             justl--list-command-exit-code))
     (justl--save-line)
     (setq tabulated-list-entries (justl--tabulated-entries entries))
     (tabulated-list-print t)

@@ -475,15 +475,17 @@ and output of process."
                                     nil nil nil nil "default"))
 	   (justl-recipe (justl--get-recipe-from-file justfile recipe))
 	   (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
-      (if recipe-has-args
-	  (let* ((cmd-args (justl-jrecipe-args justl-recipe))
-		 (user-args (mapcar (lambda (arg) (read-from-minibuffer
-                                                   (format "Just arg for %s:" (justl-jarg-arg arg))
-                                                   (or (justl-jarg-default arg) "")))
-                                    cmd-args)))
-            (justl--exec-without-justfile justl-executable
-					  (cons (justl-jrecipe-name justl-recipe) user-args)))
-	(justl--exec-without-justfile justl-executable (list recipe))))))
+      (justl--exec-without-justfile
+       justl-executable
+       (if recipe-has-args
+	   (let* ((cmd-args (justl-jrecipe-args justl-recipe))
+		  (user-args (mapcar (lambda (arg) (read-from-minibuffer
+                                                    (format "Just arg for %s:" (justl-jarg-arg arg))
+                                                    (or (justl-jarg-default arg) "")))
+                                     cmd-args)))
+             (justl--exec-without-justfile justl-executable
+					   (cons (justl-jrecipe-name justl-recipe) user-args)))
+	 (justl--exec-without-justfile justl-executable (list recipe)))))))
 
 (defun justl-exec-default-recipe ()
   "Execute default recipe."
@@ -525,21 +527,25 @@ and output of process."
             (list nil (vector (nth 0 x) (or (nth 1 x) ""))))
           recipes))
 
-(defun justl--no-exec-with-eshell (recipe)
-  "Opens eshell buffer but does not execute it.
-Populates the eshell buffer with RECIPE name so that it can be
-tweaked further by the user."
-  (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe))
-         (default-directory (f-dirname justl-justfile)))
-    (eshell)
-    (insert (format "just %s" recipe))))
+(defmacro justl--in-dedicated-eshell (recipe &rest body)
+  "Start eshell in a dedicated buffer for RECIPE and execute BODY."
+  (declare (indent defun))
+  `(let* ((eshell-buffer-name (format "justl - eshell - %s" recipe))
+          (default-directory (f-dirname justl-justfile)))
+     (eshell)
+     ,@body))
 
-(defun justl--exec-with-eshell (recipe)
-  "Opens eshell buffer and execute the just RECIPE."
-  (let* ((eshell-buffer-name (format "justl - eshell - %s" recipe))
-         (default-directory (f-dirname justl-justfile)))
-    (eshell)
-    (insert (format "just %s" recipe))
+(defun justl--no-exec-with-eshell (executable recipe)
+  "Opens eshell buffer but does not execute it.
+Populates the eshell buffer with a command to run RECIPE with
+EXECUTABLE so that it can be tweaked further by the user."
+  (justl--in-dedicated-eshell recipe
+    (insert (string-join (cons executable recipe) " "))))
+
+(defun justl--exec-with-eshell (executable recipe)
+  "Opens eshell buffer and use EXECUTABLE to execute the just RECIPE."
+  (justl--in-dedicated-eshell recipe
+    (insert (string-join (cons executable recipe) " "))
     (eshell-send-input)))
 
 (defun justl-exec-eshell ()
@@ -547,36 +553,34 @@ tweaked further by the user."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
          (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
-         (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
-    (if recipe-has-args
-        (let* ((cmd-args (justl-jrecipe-args justl-recipe))
-               (user-args (mapcar (lambda (arg)
-                                    (format "%s " (or (justl-jarg-default arg) "")))
-                                  cmd-args)))
-          (justl--no-exec-with-eshell
-           (string-join (append t-args
-                                (cons (justl-jrecipe-name justl-recipe) user-args)) " ")))
-      (justl--exec-with-eshell
-       (string-join (append t-args (list recipe)) " ")))))
+    (justl--no-exec-with-eshell
+     justl-executable
+     (append (transient-args 'justl-help-popup)
+             (if recipe-has-args
+                 (let* ((cmd-args (justl-jrecipe-args justl-recipe))
+                        (user-args (mapcar (lambda (arg)
+                                             (format "%s " (or (justl-jarg-default arg) "")))
+                                           cmd-args)))
+                   (cons (justl-jrecipe-name justl-recipe) user-args))
+               (list recipe))))))
 
 (defun justl-no-exec-eshell ()
   "Open eshell with the recipe but do not execute it."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
          (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
-         (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
-    (if recipe-has-args
-        (let* ((cmd-args (justl-jrecipe-args justl-recipe))
-               (user-args (mapcar (lambda (arg)
-                                    (format "%s " (or (justl-jarg-default arg) "")))
-                                  cmd-args)))
-          (justl--no-exec-with-eshell
-           (string-join (append t-args
-                                (cons (justl-jrecipe-name justl-recipe) user-args)) " ")))
-      (justl--no-exec-with-eshell
-       (string-join (append t-args (list recipe)) " ")))))
+    (justl--no-exec-with-eshell
+     justl-executable
+     (append (transient-args 'justl-help-popup)
+             (if recipe-has-args
+                 (let* ((cmd-args (justl-jrecipe-args justl-recipe))
+                        (user-args (mapcar (lambda (arg)
+                                             (format "%s " (or (justl-jarg-default arg) "")))
+                                           cmd-args)))
+                   (cons (justl-jrecipe-name justl-recipe) user-args))
+               (list recipe))))))
 
 (transient-define-argument justl--color ()
   :description "Color output"
@@ -623,30 +627,29 @@ tweaked further by the user."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
          (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
-         (t-args (transient-args 'justl-help-popup))
          (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
-    (if recipe-has-args
-        (let* ((cmd-args (justl-jrecipe-args justl-recipe))
-               (user-args (mapcar (lambda (arg) (read-from-minibuffer
-                                                 (format "Just arg for %s:" (justl-jarg-arg arg))
-                                                 (or (justl-jarg-default arg) "")))
-                                  cmd-args)))
-          (justl--exec justl-executable
-                       (append t-args
-                               (cons (justl-jrecipe-name justl-recipe) user-args))))
-      (justl--exec justl-executable (append t-args (list recipe))))))
+    (justl--exec
+     justl-executable
+     (append (transient-args 'justl-help-popup)
+             (if recipe-has-args
+                 (let* ((cmd-args (justl-jrecipe-args justl-recipe))
+                        (user-args (mapcar (lambda (arg) (read-from-minibuffer
+                                                          (format "Just arg for %s:" (justl-jarg-arg arg))
+                                                          (or (justl-jarg-default arg) "")))
+                                           cmd-args)))
+                   (cons (justl-jrecipe-name justl-recipe) user-args))
+               (list recipe))))))
 
 (defun justl--exec-recipe-with-args ()
   "Execute just recipe with arguments."
   (interactive)
   (let* ((recipe (justl--get-word-under-cursor))
          (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
-         (t-args (transient-args 'justl-help-popup))
          (user-args (read-from-minibuffer
                      (format "Arguments seperated by spaces:"))))
     (justl--exec
      justl-executable
-     (append t-args
+     (append (transient-args 'justl-help-popup)
              (cons
               (justl-jrecipe-name justl-recipe)
               (split-string user-args " "))))))

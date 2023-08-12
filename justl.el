@@ -24,7 +24,7 @@
 ;; Keywords: just justfile tools processes
 ;; URL: https://github.com/psibi/justl.el
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((transient "0.1.0") (emacs "27.1") (s "1.2.0") (f "0.20.0"))
+;; Package-Requires: ((transient "0.1.0") (emacs "27.1") (s "1.2.0") (f "0.20.0") (inheritenv "0.2"))
 
 ;;; Commentary:
 
@@ -77,6 +77,7 @@
 (require 'comint)
 (require 'subr-x)
 (require 'tramp)
+(require 'inheritenv)
 
 (defgroup justl nil
   "Justfile customization group."
@@ -404,29 +405,23 @@ ARGS is a ist of arguments."
                                    :mode mode)))
   (pop-to-buffer justl--output-process-buffer))
 
-(defun justl--exec-to-string (cmd)
-  "Replace \"shell-command-to-string\" to log to process buffer.
-
-CMD is the command string to run."
-  (justl--log-command "just-command" cmd)
-  (shell-command-to-string cmd))
-
-(defun justl--exec-to-string-with-exit-code (cmd)
-  "Replace \"shell-command-to-string\" to log to process buffer.
-
-CMD is the command string to run. Returns a list with status code
-and output of process."
-  (justl--log-command "just-command" cmd)
-  (with-temp-buffer
-    (let ((justl-status (process-file-shell-command cmd nil t))
-          (buf-string (buffer-substring-no-properties (point-min) (point-max))))
-      (list justl-status buf-string))))
+(defun justl--exec-to-string-with-exit-code (executable &rest args)
+  "Run EXECUTABLE with ARGS and return (exit_code . output_string).
+Logs the command run."
+  (let ((cmd (string-join (cons executable (mapcar 'shell-quote-argument args)) " ")))
+    (justl--log-command "just-command" cmd)
+    (inheritenv
+     (with-temp-buffer
+       (let ((justl-status (apply 'call-process executable nil t nil args))
+             (buf-string (buffer-substring-no-properties (point-min) (point-max))))
+         (cons justl-status buf-string))))))
 
 (defun justl--get-recipes (justfile)
   "Return all the recipes from JUSTFILE."
-  (let ((recipes (split-string (justl--exec-to-string
-                                 (format "%s --justfile=%s --summary --unsorted --color=never"
-                                         justl-executable (tramp-file-local-name justfile))))))
+  (let ((recipes (split-string (cdr (justl--exec-to-string-with-exit-code
+                                     justl-executable
+                                     (concat "--justfile=" (tramp-file-local-name justfile))
+                                     "--summary" "--unsorted" "--color=never")))))
     (mapcar #'string-trim-right recipes)))
 
 (defun justl--justfile-argument ()
@@ -440,15 +435,15 @@ and output of process."
 
 (defun justl--get-recipes-with-desc (justfile)
   "Return all the recipes in JUSTFILE with description."
-  (let* ((t-args (transient-args 'justl-help-popup))
-         (recipe-status (justl--exec-to-string-with-exit-code
-                         (format "%s %s --justfile=%s --list --unsorted --color=never"
-                                 justl-executable
-                                 (string-join t-args " ")
-                                 (tramp-file-local-name justfile))))
-         (justl-status (nth 0 recipe-status))
+  (let* ((recipe-status (apply 'justl--exec-to-string-with-exit-code
+                               justl-executable
+                               (append
+                                (transient-args 'justl-help-popup)
+                                (list (concat "--justfile=" (tramp-file-local-name justfile))
+                                      "--list" "--unsorted" "--color=never"))))
+         (justl-status (car recipe-status))
          (recipe-lines (split-string
-                        (nth 1 recipe-status)
+                        (cdr recipe-status)
                         "\n"))
          (recipes (mapcar (lambda (x) (split-string x "# "))
                           (cdr (seq-filter (lambda (x) (s-present? x)) recipe-lines)))))
@@ -694,30 +689,20 @@ EXECUTABLE so that it can be tweaked further by the user."
     (error "No justfile found"))
   (justl--save-line)
   (justl--pop-to-buffer (justl--buffer-name))
-  (justl-mode))
+  (justl-mode)
+  (justl--refresh-buffer))
 
 (define-derived-mode justl-mode tabulated-list-mode  "Justl"
   "Special mode for justl buffers."
   (buffer-disable-undo)
   (setq truncate-lines t)
-  (let* ((justfile (justl--find-justfile default-directory))
-	 (entries (justl--get-recipes-with-desc justfile)))
-    (if (or (null justfile) (not (zerop justl--list-command-exit-code)) )
-        (progn
-          (unless justfile
-            (message "No justfile found"))
-          (when (not (eq justl--list-command-exit-code 0) )
-            (message "Just process exited with exit-code %s"
-                     justl--list-command-exit-code)))
-      (setq tabulated-list-format
-            (vector (list "RECIPES" justl-recipe-width t)
-                    (list "DESCRIPTION" 20 t)))
-      (setq tabulated-list-entries (justl--tabulated-entries entries))
-      (setq tabulated-list-sort-key nil)
-      (tabulated-list-init-header)
-      (tabulated-list-print t)
-      (hl-line-mode 1)
-      (message (concat "Just: " (f-dirname justfile))))))
+  (setq tabulated-list-format
+        (vector (list "RECIPES" justl-recipe-width t)
+                (list "DESCRIPTION" 20 t)))
+  (setq tabulated-list-sort-key nil)
+  (tabulated-list-init-header)
+  (tabulated-list-print t)
+  (hl-line-mode 1))
 
 (provide 'justl)
 ;;; justl.el ends here

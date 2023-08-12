@@ -418,11 +418,21 @@ Logs the command run."
 
 (defun justl--get-recipes (justfile)
   "Return all the recipes from JUSTFILE."
-  (let ((recipes (split-string (cdr (justl--exec-to-string-with-exit-code
-                                     justl-executable
-                                     (concat "--justfile=" (tramp-file-local-name justfile))
-                                     "--summary" "--unsorted" "--color=never")))))
-    (mapcar #'string-trim-right recipes)))
+  (pcase (justl--dump justfile)
+    (`(0 . ,info) (let-alist info
+                    (mapcar 'symbol-name (mapcar 'car .recipes))))
+    (fail fail)))
+
+(defun justl--dump (justfile)
+  "Dump info about JUSTFILE as JSON, returns (exit_code, json)."
+  (let ((result (justl--exec-to-string-with-exit-code
+                 justl-executable
+                 (concat "--justfile=" (tramp-file-local-name justfile))
+                 "--unstable" "--dump" "--dump-format=json")))
+    (if (zerop (car result))
+        (cons (car result)
+              (json-parse-string (cdr result) :null-object nil :object-type 'alist))
+      result)))
 
 (defun justl--justfile-argument ()
   "Provides justfile argument with the proper location."
@@ -435,25 +445,12 @@ Logs the command run."
 
 (defun justl--get-recipes-with-desc (justfile)
   "Return all the recipes in JUSTFILE with description."
-  (let* ((recipe-status (apply 'justl--exec-to-string-with-exit-code
-                               justl-executable
-                               (append
-                                (transient-args 'justl-help-popup)
-                                (list (concat "--justfile=" (tramp-file-local-name justfile))
-                                      "--list" "--unsorted" "--color=never"))))
-         (justl-status (car recipe-status))
-         (recipe-lines (split-string
-                        (cdr recipe-status)
-                        "\n"))
-         (recipes (mapcar (lambda (x) (split-string x "# "))
-                          (cdr (seq-filter (lambda (x) (s-present? x)) recipe-lines)))))
+  (let* ((recipe-status (justl--dump justfile))
+         (justl-status (car recipe-status)))
     (setq justl--list-command-exit-code justl-status)
-    (when (eq (nth 0 recipe-status) 0)
-      (mapcar (lambda (x) (list (justl--get-recipe-name (nth 0 x)) (nth 1 x))) recipes))))
-
-(defun justl--list-to-jrecipe (list)
-  "Convert a single LIST of two elements to list of JRECIPE."
-  (make-justl-jrecipe :name (nth 0 list) :args (nth 1 list)))
+    (when (zerop (car recipe-status))
+      (let-alist (cdr recipe-status)
+        (mapcar (lambda (r) (let-alist r (cons .name .doc))) .recipes)))))
 
 (defun justl-exec-recipe-in-dir ()
   "Populate and execute the selected recipe."
@@ -461,7 +458,7 @@ Logs the command run."
   (let* ((justfile (justl--find-justfile default-directory)))
     (if (not justfile)
 	(error "No justfile found"))
-    (let* ((recipe (completing-read "Recipes: " (justl--get-recipes justfile)
+    (let* ((recipe (completing-read "Recipes: " (mapcar 'car (justl--get-recipes-with-desc justfile))
                                     nil nil nil nil "default"))
 	   (justl-recipe (justl--get-recipe-from-file justfile recipe))
 	   (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))

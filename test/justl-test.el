@@ -14,16 +14,6 @@
                  "color")
            (justl--get-recipes "./justfile"))))
 
-(ert-deftest justl--list-to-recipe-test ()
-  (should (equal
-           (justl-jrecipe-name (justl--list-to-jrecipe (list "recipe" "arg")))
-           "recipe"))
-  (should (equal
-           (justl-jrecipe-name (justl--list-to-jrecipe (list "recipe"))) "recipe"))
-  (should (equal
-           (justl-jrecipe-args (justl--list-to-jrecipe (list "recipe")))
-           nil)))
-
 (ert-deftest justl--recipe-has-args-test ()
   (should (equal
            (justl--jrecipe-has-args-p

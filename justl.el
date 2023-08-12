@@ -107,25 +107,6 @@ other cases, it's a known path."
   :group 'justl
   :safe 'stringp)
 
-(cl-defstruct justl-jrecipe name args)
-(cl-defstruct justl-jarg arg default)
-
-(defun justl--jrecipe-has-args-p (jrecipe)
-  "Check if JRECIPE has any arguments."
-  (justl-jrecipe-args jrecipe))
-
-(defun justl--arg-to-str (jarg)
-  "Convert JARG to just's positional argument."
-  (format "%s=%s"
-          (justl-jarg-arg jarg)
-          (or (justl-jarg-default jarg) "")))
-
-(defun justl--jrecipe-get-args (jrecipe)
-  "Convert JRECIPE arguments to list of positional arguments."
-  (let* ((recipe-args (justl-jrecipe-args jrecipe))
-         (args recipe-args))
-    (mapcar #'justl--arg-to-str args)))
-
 (defun justl--process-error-buffer (process-name)
   "Return the error buffer name for the PROCESS-NAME."
   (format "*%s:err*" process-name))
@@ -148,17 +129,6 @@ NAME is the buffer name."
 
 (defconst justl--compilation-process-name "just-compilation-process"
   "Process name for just compilation process.")
-
-(defun justl--is-variable-p (str)
-  "Check if string STR is a just variable."
-  (s-contains? ":=" str))
-
-(defun justl--is-recipe-line-p (str)
-  "Check if string STR is a recipe line."
-  (and str
-       (not (string-match "\\`[ \t\n\r]+" str))
-       (not (justl--is-variable-p str))
-       (s-contains? ":" str)))
 
 (defun justl--append-to-process-buffer (str)
   "Append string STR to the process buffer."
@@ -188,51 +158,17 @@ It searches either for the filename justfile or .justfile"
     (setq-local justl-justfile justfile-path)
     justfile-path))
 
-(defun justl--get-recipe-name (str)
-  "Compute the recipe name from the string STR."
-  (car (split-string (s-trim str) " ")))
-
-(defun justl--arg-to-jarg (str)
-  "Convert single positional argument string STR to JARG."
-  (let* ((arg (s-split "=" str)))
-    (make-justl-jarg :arg (nth 0 arg) :default (nth 1 arg))))
-
-(defun justl--str-to-jarg (str)
-  "Convert string STR to list of JARG.
-
-The string after the recipe name and before the build constraints
-is expected."
-  (when (and (not (s-blank? str)) str)
-    (let* ((args (s-split " " str)))
-      (mapcar #'justl--arg-to-jarg args))))
-
-(defun justl--process-recipe-name (str)
-  "Process and perform transformation on recipe name.
-
-STR reprents the recipe name.  Returns processed recipe name."
-  (s-chop-prefix "@" str))
-
-(defun justl--parse-recipe (str)
-  "Parse a entire recipe line.
-
-STR represents the full recipe line.  Retuns JRECIPE."
-  (let*
-      ((recipe-list (s-split ":" str))
-       (recipe-command (justl--get-recipe-name (nth 0 recipe-list)))
-       (args-str (string-join (cdr (s-split " " (nth 0 recipe-list))) " "))
-       (recipe-jargs (justl--str-to-jarg args-str)))
-    (make-justl-jrecipe :name (justl--process-recipe-name recipe-command)
-                        :args recipe-jargs)))
-
 (defun justl--log-command (process-name cmd)
   "Log the just command to the process buffer.
 
 PROCESS-NAME is the name of the process.
 CMD is the just command as a list."
-  (let ((str-cmd (if (equal 'string (type-of cmd)) cmd (mapconcat #'identity cmd " "))))
-    (setq justl--last-command str-cmd)
+  (let ((cmd (if (listp cmd)
+                 (string-join cmd " ")
+               cmd)))
+    (setq justl--last-command cmd)
     (justl--append-to-process-buffer
-     (format "[%s] \ncommand: %s" process-name str-cmd))))
+     (format "[%s] \ncommand: %S" process-name cmd))))
 
 (defun justl--sentinel (process _)
   "Sentinel function for PROCESS."
@@ -309,8 +245,7 @@ ARGS is a plist that affects how the process is run.
     (setq next-error-last-buffer buf)
     (justl-compilation-setup-buffer buf directory mode)
     (with-current-buffer buf
-      (insert (format "Just target execution started at %s \n\n" (substring (current-time-string) 0 19))))
-    (with-current-buffer buf
+      (insert (format "Just target execution started at %s \n\n" (substring (current-time-string) 0 19)))
       (let* ((process (apply
                        #'start-file-process process-name buf command)))
         (setq justl--compile-command command)
@@ -416,23 +351,42 @@ Logs the command run."
              (buf-string (buffer-substring-no-properties (point-min) (point-max))))
          (cons justl-status buf-string))))))
 
-(defun justl--get-recipes (justfile)
-  "Return all the recipes from JUSTFILE."
-  (pcase (justl--dump justfile)
-    (`(0 . ,info) (let-alist info
-                    (mapcar 'symbol-name (mapcar 'car .recipes))))
-    (fail fail)))
-
-(defun justl--dump (justfile)
-  "Dump info about JUSTFILE as JSON, returns (exit_code, json)."
+(defun justl--parse (justfile)
+  "Extract info about JUSTFILE as parsed JSON."
   (let ((result (justl--exec-to-string-with-exit-code
                  justl-executable
                  (concat "--justfile=" (tramp-file-local-name justfile))
                  "--unstable" "--dump" "--dump-format=json")))
     (if (zerop (car result))
-        (cons (car result)
-              (json-parse-string (cdr result) :null-object nil :object-type 'alist))
-      result)))
+        (json-parse-string (cdr result) :null-object nil :false-object nil :array-type 'list :object-type 'alist)
+      (error "Couldn't read %s: %s exited with code %d" justfile justl-executable (car result)))))
+
+(defun justl--get-recipes (justfile)
+  "Return all the recipes from JUSTFILE.
+They are returned as objects, as per the JSON output of \"just --dump\"."
+  (let-alist (justl--parse justfile)
+    (seq-sort (lambda (r1 r2) (string< (justl--recipe-name r1) (justl--recipe-name r2)))
+              (mapcar 'cdr .recipes))))
+
+(defun justl--recipe-name (recipe)
+  "Get the name of RECIPE."
+  (let-alist recipe .name))
+
+(defun justl--recipe-desc (recipe)
+  "Get the description of RECIPE."
+  (let-alist recipe .doc))
+
+(defun justl--recipe-args (recipe)
+  "Get the arguments for RECIPE."
+  (let-alist recipe .parameters))
+
+(defun justl--arg-name (arg)
+  "Get the name of argument ARG."
+  (let-alist arg .name))
+
+(defun justl--arg-default (arg)
+  "Get the default value of argument ARG."
+  (let-alist arg .default))
 
 (defun justl--justfile-argument ()
   "Provides justfile argument with the proper location."
@@ -443,36 +397,24 @@ Logs the command run."
   (when arg
     (cadr (s-split "--justfile=" arg))))
 
-(defun justl--get-recipes-with-desc (justfile)
-  "Return all the recipes in JUSTFILE with description."
-  (let* ((recipe-status (justl--dump justfile))
-         (justl-status (car recipe-status)))
-    (setq justl--list-command-exit-code justl-status)
-    (when (zerop (car recipe-status))
-      (let-alist (cdr recipe-status)
-        (mapcar (lambda (r) (let-alist r (cons .name .doc))) .recipes)))))
-
 (defun justl-exec-recipe-in-dir ()
   "Populate and execute the selected recipe."
   (interactive)
   (let* ((justfile (justl--find-justfile default-directory)))
-    (if (not justfile)
-	(error "No justfile found"))
-    (let* ((recipe (completing-read "Recipes: " (mapcar 'car (justl--get-recipes-with-desc justfile))
-                                    nil nil nil nil "default"))
-	   (justl-recipe (justl--get-recipe-from-file justfile recipe))
-	   (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
-      (justl--exec-without-justfile
-       justl-executable
-       (if recipe-has-args
-	   (let* ((cmd-args (justl-jrecipe-args justl-recipe))
-		  (user-args (mapcar (lambda (arg) (read-from-minibuffer
-                                                    (format "Just arg for %s:" (justl-jarg-arg arg))
-                                                    (or (justl-jarg-default arg) "")))
-                                     cmd-args)))
-             (justl--exec-without-justfile justl-executable
-					   (cons (justl-jrecipe-name justl-recipe) user-args)))
-	 (justl--exec-without-justfile justl-executable (list recipe)))))))
+    (unless justfile
+      (error "No justfile found"))
+    (let* ((recipes (justl--get-recipes justfile))
+           (recipe-name (completing-read "Recipes: "
+                                         (mapcar 'justl--recipe-name recipes)
+                                         nil t nil nil))
+           (recipe (cdr (assoc recipe-name recipes))))
+      (apply 'justl--exec-without-justfile
+             justl-executable
+             (cons recipe-name
+                   (mapcar (lambda (arg) (read-from-minibuffer
+                                          (format "Just arg for %s:" (justl--arg-name arg))
+                                          (or (justl--arg-default arg) "")))
+                           (justl--recipe-args recipe)))))))
 
 (defun justl-exec-default-recipe ()
   "Execute default recipe."
@@ -498,76 +440,41 @@ Logs the command run."
     (format "*just [%s]*"
             (f-dirname justfile))))
 
-(defvar justl--line-number nil
-  "Store the current line number to jump back after a refresh.")
-
-(defun justl--save-line ()
-  "Save the current line number if the view is unchanged."
-  (if (equal (buffer-name (current-buffer))
-             (justl--buffer-name))
-      (setq justl--line-number (+ 1 (count-lines 1 (point))))
-    (setq justl--line-number nil)))
-
 (defun justl--tabulated-entries (recipes)
   "Turn RECIPES to tabulated entries."
-  (mapcar (lambda (x)
-            (list nil (vector (nth 0 x) (or (nth 1 x) ""))))
+  (mapcar (lambda (r)
+            (list
+             ;; Comparison key, used to restore line number after refresh
+             (justl--recipe-name r)
+             (vector (propertize (justl--recipe-name r) 'recipe r)
+                     (or (justl--recipe-desc r) ""))))
           recipes))
 
-(defmacro justl--in-dedicated-eshell (recipe &rest body)
-  "Start eshell in a dedicated buffer for RECIPE and execute BODY."
-  (declare (indent defun))
-  `(let* ((eshell-buffer-name (format "justl - eshell - %s" recipe))
-          (default-directory (f-dirname justl-justfile)))
-     (eshell)
-     ,@body))
-
-(defun justl--no-exec-with-eshell (executable recipe)
-  "Opens eshell buffer but does not execute it.
-Populates the eshell buffer with a command to run RECIPE with
-EXECUTABLE so that it can be tweaked further by the user."
-  (justl--in-dedicated-eshell recipe
-    (insert (string-join (cons executable recipe) " "))))
-
-(defun justl--exec-with-eshell (executable recipe)
-  "Opens eshell buffer and use EXECUTABLE to execute the just RECIPE."
-  (justl--in-dedicated-eshell recipe
-    (insert (string-join (cons executable recipe) " "))
-    (eshell-send-input)))
-
-(defun justl-exec-eshell ()
-  "Execute just recipe in eshell."
+(defun justl-exec-eshell (&optional no-send)
+  "Execute just recipe in eshell.
+When NO-SEND is non-nil, the command is inserted ready for editing but is
+not executed."
   (interactive)
-  (let* ((recipe (justl--get-word-under-cursor))
-         (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
-         (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
-    (justl--no-exec-with-eshell
-     justl-executable
-     (append (transient-args 'justl-help-popup)
-             (if recipe-has-args
-                 (let* ((cmd-args (justl-jrecipe-args justl-recipe))
-                        (user-args (mapcar (lambda (arg)
-                                             (format "%s " (or (justl-jarg-default arg) "")))
-                                           cmd-args)))
-                   (cons (justl-jrecipe-name justl-recipe) user-args))
-               (list recipe))))))
+  (let* ((recipe (justl--get-recipe-under-cursor))
+         (eshell-buffer-name (format "justl - eshell - %s" (justl--recipe-name recipe)))
+         (default-directory (f-dirname justl-justfile)))
+    (eshell)
+    (insert (string-join
+             (cons
+              justl-executable
+              (cons (justl--recipe-name recipe)
+                    (append (transient-args 'justl-help-popup)
+                            (seq-filter 'identity
+                                        (mapcar 'justl--arg-default
+                                                (justl--recipe-args recipe))))))
+             " "))
+    (unless no-send
+      (eshell-send-input))))
 
 (defun justl-no-exec-eshell ()
   "Open eshell with the recipe but do not execute it."
   (interactive)
-  (let* ((recipe (justl--get-word-under-cursor))
-         (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
-         (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
-    (justl--no-exec-with-eshell
-     justl-executable
-     (append (transient-args 'justl-help-popup)
-             (if recipe-has-args
-                 (let* ((cmd-args (justl-jrecipe-args justl-recipe))
-                        (user-args (mapcar (lambda (arg)
-                                             (format "%s " (or (justl-jarg-default arg) "")))
-                                           cmd-args)))
-                   (cons (justl-jrecipe-name justl-recipe) user-args))
-               (list recipe))))))
+  (justl-exec-eshell t))
 
 (transient-define-argument justl--color ()
   :description "Color output"
@@ -601,81 +508,54 @@ EXECUTABLE so that it can be tweaked further by the user."
     ]
    ])
 
-(defun justl--get-recipe-from-file (filename recipe)
-  "Get specific RECIPE from the FILENAME."
-  (let* ((jcontent (f-read-text filename))
-         (recipe-lines (split-string jcontent "\n"))
-         (all-recipe (seq-filter #'justl--is-recipe-line-p recipe-lines))
-         (current-recipe (seq-filter (lambda (x) (s-contains? recipe x)) all-recipe)))
-    (justl--parse-recipe (car current-recipe))))
-
 (defun justl-exec-recipe ()
   "Execute just recipe."
   (interactive)
-  (let* ((recipe (justl--get-word-under-cursor))
-         (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
-         (recipe-has-args (justl--jrecipe-has-args-p justl-recipe)))
+  (let* ((recipe (justl--get-recipe-under-cursor)))
     (justl--exec
      justl-executable
      (append (transient-args 'justl-help-popup)
-             (if recipe-has-args
-                 (let* ((cmd-args (justl-jrecipe-args justl-recipe))
-                        (user-args (mapcar (lambda (arg) (read-from-minibuffer
-                                                          (format "Just arg for %s:" (justl-jarg-arg arg))
-                                                          (or (justl-jarg-default arg) "")))
-                                           cmd-args)))
-                   (cons (justl-jrecipe-name justl-recipe) user-args))
-               (list recipe))))))
+             (cons (justl--recipe-name recipe)
+                   (mapcar (lambda (arg) (read-from-minibuffer
+                                          (format "Just arg for `%s': " (justl--arg-name arg))
+                                          (or (justl--arg-default arg) "")))
+                           (justl--recipe-args recipe)))))))
 
 (defun justl--exec-recipe-with-args ()
   "Execute just recipe with arguments."
   (interactive)
-  (let* ((recipe (justl--get-word-under-cursor))
-         (justl-recipe (justl--get-recipe-from-file justl-justfile recipe))
+  (let* ((recipe (justl--get-recipe-under-cursor))
+         (recipe-name (justl--recipe-name recipe))
          (user-args (read-from-minibuffer
-                     (format "Arguments seperated by spaces:"))))
+                     (format "Arguments for `%s' separated by spaces: "
+                             recipe-name))))
     (justl--exec
      justl-executable
      (append (transient-args 'justl-help-popup)
              (cons
-              (justl-jrecipe-name justl-recipe)
+              recipe-name
               (split-string user-args " "))))))
 
 (defun justl-go-to-recipe ()
   "Go to the recipe on justfile."
   (interactive)
-  (let* ((recipe (justl--get-word-under-cursor))
-         (justl-recipe (justl--get-recipe-from-file justl-justfile recipe)))
-    (progn
-      (find-file justl-justfile)
-      (goto-char 0)
-      (when (re-search-forward (concat (justl-jrecipe-name justl-recipe) ".*:") nil t 1)
-        (let ((start (point)))
-          (goto-char start)
-          (goto-char (line-beginning-position)))))))
-
-(defun justl--get-word-under-cursor ()
-  "Utility function to get the name of the recipe under the cursor."
-  (aref (tabulated-list-get-entry) 0))
-
-(defun justl--jump-back-to-line ()
-  "Jump back to the last cached line number."
-  (when justl--line-number
+  (let* ((recipe (justl--get-recipe-under-cursor)))
+    (find-file justl-justfile)
     (goto-char (point-min))
-    (forward-line (1- justl--line-number))))
+    (when (re-search-forward (concat "^[@]?" (regexp-quote (justl--recipe-name recipe)) "\\(?: .*?\\)?:") nil t 1)
+      (goto-char (line-beginning-position)))))
+
+(defun justl--get-recipe-under-cursor ()
+  "Utility function to get the name of the recipe under the cursor."
+  (get-text-property 0 'recipe (aref (tabulated-list-get-entry) 0)))
 
 (defun justl--refresh-buffer ()
   "Refresh justl buffer."
   (interactive)
   (let* ((justfile (justl--find-justfile default-directory))
-         (entries (justl--get-recipes-with-desc justfile)))
-    (when (not (eq justl--list-command-exit-code 0) )
-      (error "Just process exited with exit-code %s.  Check justfile syntax"
-             justl--list-command-exit-code))
-    (justl--save-line)
+         (entries (justl--get-recipes justfile)))
     (setq tabulated-list-entries (justl--tabulated-entries entries))
     (tabulated-list-print t)
-    (justl--jump-back-to-line)
     (message "justl-mode: Refreshed")))
 
 ;;;###autoload
@@ -684,7 +564,6 @@ EXECUTABLE so that it can be tweaked further by the user."
   (interactive)
   (unless (justl--find-justfile default-directory)
     (error "No justfile found"))
-  (justl--save-line)
   (justl--pop-to-buffer (justl--buffer-name))
   (justl-mode)
   (justl--refresh-buffer))

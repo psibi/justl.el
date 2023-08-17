@@ -347,7 +347,7 @@ Logs the command run."
     (justl--log-command "just-command" cmd)
     (inheritenv
      (with-temp-buffer
-       (let ((justl-status (apply 'call-process executable nil t nil args))
+       (let ((justl-status (apply 'process-file executable nil t nil args))
              (buf-string (buffer-substring-no-properties (point-min) (point-max))))
          (cons justl-status buf-string))))))
 
@@ -359,7 +359,7 @@ Logs the command run."
                  "--unstable" "--dump" "--dump-format=json")))
     (if (zerop (car result))
         (json-parse-string (cdr result) :null-object nil :false-object nil :array-type 'list :object-type 'alist)
-      (error "Couldn't read %s: %s exited with code %d" justfile justl-executable (car result)))))
+      (error "Couldn't read %s: %s exited with code %d" (tramp-file-local-name justfile) justl-executable (car result)))))
 
 (defun justl--get-recipes (justfile)
   "Return all the recipes from JUSTFILE.
@@ -387,6 +387,11 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
 (defun justl--arg-default (arg)
   "Get the default value of argument ARG."
   (let-alist arg .default))
+
+(defun justl--arg-default-as-string (arg)
+  "Get the default value of argument ARG as a string.
+Empty string is returned if the arg has no default."
+  (if arg (format "%s" arg) ""))
 
 (defun justl--justfile-argument ()
   "Provides justfile argument with the proper location."

@@ -417,8 +417,8 @@ Empty string is returned if the arg has no default."
              justl-executable
              (cons recipe-name
                    (mapcar (lambda (arg) (read-from-minibuffer
-                                          (format "Just arg for %s:" (justl--arg-name arg))
-                                          (or (justl--arg-default arg) "")))
+                                          (format "Just arg for %s: " (justl--arg-name arg))
+                                          (justl--arg-default-as-string arg)))
                            (justl--recipe-args recipe)))))))
 
 (defun justl-exec-default-recipe ()
@@ -469,9 +469,8 @@ not executed."
               justl-executable
               (cons (justl--recipe-name recipe)
                     (append (transient-args 'justl-help-popup)
-                            (seq-filter 'identity
-                                        (mapcar 'justl--arg-default
-                                                (justl--recipe-args recipe))))))
+                            (mapcar 'justl--arg-default-as-string
+                                    (justl--recipe-args recipe)))))
              " "))
     (unless no-send
       (eshell-send-input))))
@@ -523,7 +522,7 @@ not executed."
              (cons (justl--recipe-name recipe)
                    (mapcar (lambda (arg) (read-from-minibuffer
                                           (format "Just arg for `%s': " (justl--arg-name arg))
-                                          (or (justl--arg-default arg) "")))
+                                          (justl--arg-default-as-string arg)))
                            (justl--recipe-args recipe)))))))
 
 (defun justl--exec-recipe-with-args ()

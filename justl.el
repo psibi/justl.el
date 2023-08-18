@@ -552,7 +552,10 @@ not executed."
 
 (defun justl--get-recipe-under-cursor ()
   "Utility function to get the name of the recipe under the cursor."
-  (get-text-property 0 'recipe (aref (tabulated-list-get-entry) 0)))
+  (let ((entry (tabulated-list-get-entry)))
+    (if entry
+        (get-text-property 0 'recipe (aref entry 0))
+      (user-error "There is no recipe on the current line"))))
 
 (defun justl--refresh-buffer ()
   "Refresh justl buffer."

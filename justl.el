@@ -388,11 +388,6 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
   "Get the default value of argument ARG."
   (let-alist arg .default))
 
-(defun justl--arg-default-as-string (arg)
-  "Get the default value of argument ARG as a string.
-Empty string is returned if the arg has no default."
-  (if arg (format "%s" arg) ""))
-
 (defun justl--justfile-argument ()
   "Provides justfile argument with the proper location."
   (format "--justfile=%s" (tramp-file-local-name justl-justfile)))
@@ -416,9 +411,7 @@ Empty string is returned if the arg has no default."
       (justl--exec-without-justfile
        justl-executable
        (cons recipe-name
-             (mapcar (lambda (arg) (read-from-minibuffer
-                                    (format "Just arg for %s: " (justl--arg-name arg))
-                                    (justl--arg-default-as-string arg)))
+             (mapcar 'justl--read-arg
                      (justl--recipe-args recipe)))))))
 
 (defun justl-exec-default-recipe ()
@@ -469,7 +462,7 @@ not executed."
               justl-executable
               (cons (justl--recipe-name recipe)
                     (append (transient-args 'justl-help-popup)
-                            (mapcar 'justl--arg-default-as-string
+                            (mapcar 'justl--arg-default
                                     (justl--recipe-args recipe)))))
              " "))
     (unless no-send
@@ -512,6 +505,16 @@ not executed."
     ]
    ])
 
+(defun justl--read-arg (arg)
+  "Read a value for ARG from the minibuffer."
+  (let ((default (justl--arg-default arg)))
+    (read-from-minibuffer
+     (format "Just arg for `%s': " (justl--arg-name arg))
+     (pcase default
+       (`("variable" ,name) name)
+       ('nil nil)
+       (_ default)))))
+
 (defun justl-exec-recipe ()
   "Execute just recipe."
   (interactive)
@@ -520,9 +523,7 @@ not executed."
      justl-executable
      (append (transient-args 'justl-help-popup)
              (cons (justl--recipe-name recipe)
-                   (mapcar (lambda (arg) (read-from-minibuffer
-                                          (format "Just arg for `%s': " (justl--arg-name arg))
-                                          (justl--arg-default-as-string arg)))
+                   (mapcar 'justl--read-arg
                            (justl--recipe-args recipe)))))))
 
 (defun justl--exec-recipe-with-args ()

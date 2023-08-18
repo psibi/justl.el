@@ -18,10 +18,6 @@ plan:
 push2 version1 version2:
     echo {{version1}} {{version2}}
 
-[private]
-private_command:
-    echo "private command"
-
 # A target that will fail
 fail:
     exit 1

@@ -107,6 +107,11 @@ other cases, it's a known path."
   :group 'justl
   :safe 'stringp)
 
+(defcustom justl-include-private-recipes t
+  "If non-nil, include private recipes in the list."
+  :type 'boolean
+  :safe 'booleanp)
+
 (defun justl--process-error-buffer (process-name)
   "Return the error buffer name for the PROCESS-NAME."
   (format "*%s:err*" process-name))
@@ -395,6 +400,10 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
   "Get the arguments for RECIPE."
   (let-alist recipe .parameters))
 
+(defun justl--recipe-private-p (recipe)
+  "Return non-nil if RECIPE is private."
+  (let-alist recipe (cl-find "private" .attributes :test 'string=)))
+
 (defun justl--arg-name (arg)
   "Get the name of argument ARG."
   (let-alist arg .name))
@@ -461,7 +470,10 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
              (justl--recipe-name r)
              (vector (propertize (justl--recipe-name r) 'recipe r)
                      (or (justl--recipe-desc r) ""))))
-          recipes))
+          (seq-filter (lambda (r)
+                        (or justl-include-private-recipes
+                            (not (justl--recipe-private-p r))))
+                      recipes)))
 
 (defun justl-exec-eshell (&optional no-send)
   "Execute just recipe in eshell.

@@ -413,13 +413,13 @@ Empty string is returned if the arg has no default."
                                          (mapcar 'justl--recipe-name recipes)
                                          nil t nil nil))
            (recipe (cdr (assoc recipe-name recipes))))
-      (apply 'justl--exec-without-justfile
-             justl-executable
-             (cons recipe-name
-                   (mapcar (lambda (arg) (read-from-minibuffer
-                                          (format "Just arg for %s: " (justl--arg-name arg))
-                                          (justl--arg-default-as-string arg)))
-                           (justl--recipe-args recipe)))))))
+      (justl--exec-without-justfile
+       justl-executable
+       (cons recipe-name
+             (mapcar (lambda (arg) (read-from-minibuffer
+                                    (format "Just arg for %s: " (justl--arg-name arg))
+                                    (justl--arg-default-as-string arg)))
+                     (justl--recipe-args recipe)))))))
 
 (defun justl-exec-default-recipe ()
   "Execute default recipe."

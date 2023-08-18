@@ -341,32 +341,45 @@ ARGS is a ist of arguments."
   (pop-to-buffer justl--output-process-buffer))
 
 (defun justl--exec-to-string-with-exit-code (executable &rest args)
-  "Run EXECUTABLE with ARGS and return (exit_code . output_string).
+  "Run EXECUTABLE with ARGS, throwing an error if the command fails.
 Logs the command run."
   (let ((cmd (string-join (cons executable (mapcar 'shell-quote-argument args)) " ")))
     (justl--log-command "just-command" cmd)
     (inheritenv
      (with-temp-buffer
-       (let ((justl-status (apply 'process-file executable nil t nil args))
-             (buf-string (buffer-substring-no-properties (point-min) (point-max))))
-         (cons justl-status buf-string))))))
+       (let ((exit-code (apply 'process-file executable nil t nil args)))
+         (if (zerop exit-code)
+             (buffer-substring-no-properties (point-min) (point-max))
+           (error "Command failed with exit code %d: %S" exit-code (cons executable args))))))))
 
 (defun justl--parse (justfile)
   "Extract info about JUSTFILE as parsed JSON."
-  (let ((result (justl--exec-to-string-with-exit-code
-                 justl-executable
-                 (concat "--justfile=" (tramp-file-local-name justfile))
-                 "--unstable" "--dump" "--dump-format=json")))
-    (if (zerop (car result))
-        (json-parse-string (cdr result) :null-object nil :false-object nil :array-type 'list :object-type 'alist)
-      (error "Couldn't read %s: %s exited with code %d" (tramp-file-local-name justfile) justl-executable (car result)))))
+  (let ((json (justl--exec-to-string-with-exit-code
+               justl-executable
+               (justl--justfile-argument justfile)
+               "--unstable" "--dump" "--dump-format=json"))
+        ;; Obtain the unsorted declaration order separately
+        (unsorted-recipes (s-split
+                           " "
+                           (s-trim-right
+                            (justl--exec-to-string-with-exit-code
+                             justl-executable
+                             (justl--justfile-argument justfile)
+                             "--summary" "--unsorted"))
+                           t)))
+    (let ((parsed (json-parse-string json :null-object nil :false-object nil :array-type 'list :object-type 'alist)))
+      (cl-flet ((unsorted-index (r)
+                  (or (cl-position (let-alist (cdr r) .name) unsorted-recipes :test 'string=)
+                      (error "didn't find this in unsorted-recipes: %S" (let-alist (cdr r) .name)))))
+        (let-alist parsed
+          (cl-sort .recipes (lambda (a b) (< (unsorted-index a) (unsorted-index b))))
+          parsed)))))
 
 (defun justl--get-recipes (justfile)
   "Return all the recipes from JUSTFILE.
 They are returned as objects, as per the JSON output of \"just --dump\"."
   (let-alist (justl--parse justfile)
-    (seq-sort (lambda (r1 r2) (string< (justl--recipe-name r1) (justl--recipe-name r2)))
-              (mapcar 'cdr .recipes))))
+    (mapcar 'cdr .recipes)))
 
 (defun justl--recipe-name (recipe)
   "Get the name of RECIPE."
@@ -388,9 +401,9 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
   "Get the default value of argument ARG."
   (let-alist arg .default))
 
-(defun justl--justfile-argument ()
-  "Provides justfile argument with the proper location."
-  (format "--justfile=%s" (tramp-file-local-name justl-justfile)))
+(defun justl--justfile-argument (&optional justfile)
+  "Provides JUSTFILE argument with the proper location."
+  (format "--justfile=%s" (tramp-file-local-name (or justfile justl-justfile))))
 
 (defun justl--justfile-from-arg (arg)
   "Return justfile filepath from ARG."

@@ -10,8 +10,8 @@
 
 (ert-deftest justl--get-recipes-test ()
   (should (equal
-           (list "build-cmd" "carriage-return" "color" "default" "fail" "plan" "push" "push2")
-           (seq-sort 'string< (mapcar 'justl--recipe-name (justl--get-recipes "./justfile"))))))
+           (list "default" "build-cmd"  "plan" "push" "push2" "fail" "carriage-return" "color")
+           (mapcar 'justl--recipe-name (justl--get-recipes "./justfile")))))
 
 (ert-deftest justl--get-description-test ()
   (let* ((recipes (justl--get-recipes "./justfile"))

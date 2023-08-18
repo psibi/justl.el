@@ -89,13 +89,11 @@
 (defcustom justl-executable "just"
   "Location of just executable."
   :type 'file
-  :group 'justl
   :safe 'stringp)
 
 (defcustom justl-recipe-width 20
   "Width of the recipe column."
-  :type 'integer
-  :group 'justl)
+  :type 'integer)
 
 (defcustom justl-justfile nil
   "Buffer local variable which points to the justfile.
@@ -104,7 +102,6 @@ If this is NIL, it means that no justfile was found.  In any
 other cases, it's a known path."
   :type 'string
   :local t
-  :group 'justl
   :safe 'stringp)
 
 (defcustom justl-include-private-recipes t

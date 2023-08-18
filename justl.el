@@ -369,8 +369,10 @@ Logs the command run."
                            t)))
     (let ((parsed (json-parse-string json :null-object nil :false-object nil :array-type 'list :object-type 'alist)))
       (cl-flet ((unsorted-index (r)
-                  (or (cl-position (let-alist (cdr r) .name) unsorted-recipes :test 'string=)
-                      (error "didn't find this in unsorted-recipes: %S" (let-alist (cdr r) .name)))))
+                  (let-alist (cdr r)
+                    (or (cl-position .name unsorted-recipes :test 'string=)
+                        ;; sort private commands last
+                        1000))))
         (let-alist parsed
           (cl-sort .recipes (lambda (a b) (< (unsorted-index a) (unsorted-index b))))
           parsed)))))

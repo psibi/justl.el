@@ -122,10 +122,6 @@ other cases, it's a known path."
 NAME is the buffer name."
   (pop-to-buffer-same-window (get-buffer-create name)))
 
-(defvar justl--last-command nil)
-
-(defvar justl--list-command-exit-code 0)
-
 (defconst justl--process-buffer "*just-process*"
   "Just process buffer name.")
 
@@ -171,7 +167,6 @@ CMD is the just command as a list."
   (let ((cmd (if (listp cmd)
                  (string-join cmd " ")
                cmd)))
-    (setq justl--last-command cmd)
     (justl--append-to-process-buffer
      (format "[%s] \ncommand: %S" process-name cmd))))
 

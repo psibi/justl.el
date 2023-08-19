@@ -530,7 +530,7 @@ not executed."
   "Read a value for ARG from the minibuffer."
   (let ((default (justl--arg-default arg)))
     (read-from-minibuffer
-     (format "Just arg for `%s': " (justl--arg-name arg))
+     (format "Just arg for '%s': " (justl--arg-name arg))
      (pcase default
        (`("variable" ,name) name)
        ('nil nil)

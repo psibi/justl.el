@@ -1,3 +1,11 @@
+* Unreleased
+
+- Respect buffer-local environments, for compatibility with ~envrc.el~
+  when ~just~ is installed on a per-project basis.
+- Add ~justl-include-private-recipes~ to show private recipes in the
+  list (defaults to on).
+- Rewritten internals, using ~just~ itself to parse recipe information.
+
 * 0.13
 
 - TRAMP support

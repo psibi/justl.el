@@ -370,8 +370,10 @@ Logs the command run."
                     (or (cl-position .name unsorted-recipes :test 'string=)
                         ;; sort private commands last
                         1000))))
-        (let-alist parsed
-          (cl-sort .recipes (lambda (a b) (< (unsorted-index a) (unsorted-index b))))
+        (let ((recipes-entry (assoc 'recipes parsed)))
+          (setcdr recipes-entry
+                  (seq-sort (lambda (a b) (< (unsorted-index a) (unsorted-index b)))
+                            (cdr recipes-entry)))
           parsed)))))
 
 (defun justl--get-recipes (justfile)

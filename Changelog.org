@@ -1,3 +1,11 @@
+* Unreleased
+
+- Respect buffer-local environments, for compatibility with ~envrc.el~
+  when ~just~ is installed on a per-project basis.
+- Add ~justl-include-private-recipes~ to show private recipes in the
+  list (defaults to on).
+- Rewritten internals, using ~just~ itself to parse recipe information.
+
 * 0.13
 
 - TRAMP support
@@ -101,7 +109,7 @@ finished and what it's exit status code looks like.
 - Add ability to turn off color in the output. Useful for eshell
   integration which doesn't recognize color without additional setup.
 
-- Integration with eshell done. You can now execute the recipies in
+- Integration with eshell done. You can now execute the recipes in
   either eshell or open eshell and give positional arguments etc for
   the recipe before executing it. The key binding for it is *E* and
   *W*.

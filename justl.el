@@ -351,18 +351,17 @@ Logs the command run."
 
 (defun justl--parse (justfile)
   "Extract info about JUSTFILE as parsed JSON."
-  (let ((json (justl--exec-to-string-with-exit-code
-               justl-executable
-               (justl--justfile-argument justfile)
-               "--unstable" "--dump" "--dump-format=json"))
+  (let* ((base-args (append `(,justl-executable)
+                             (transient-args 'justl-help-popup)
+                             `(,(justl--justfile-argument justfile))))
+         (json (apply 'justl--exec-to-string-with-exit-code
+                      (append base-args '("--dump" "--dump-format=json"))))
         ;; Obtain the unsorted declaration order separately
         (unsorted-recipes (s-split
                            " "
                            (s-trim-right
-                            (justl--exec-to-string-with-exit-code
-                             justl-executable
-                             (justl--justfile-argument justfile)
-                             "--summary" "--unsorted"))
+                            (apply 'justl--exec-to-string-with-exit-code
+                                   (append base-args '("--summary" "--unsorted"))))
                            t)))
     (let ((parsed (json-parse-string json :null-object nil :false-object nil :array-type 'list :object-type 'alist)))
       (cl-flet ((unsorted-index (r)
@@ -478,14 +477,15 @@ not executed."
          (eshell-buffer-name (format "justl - eshell - %s" (justl--recipe-name recipe)))
          (default-directory (f-dirname justl-justfile)))
     (eshell)
-    (insert (string-join
-             (cons
-              justl-executable
-              (cons (justl--recipe-name recipe)
-                    (append (transient-args 'justl-help-popup)
-                            (mapcar 'justl--arg-default
-                                    (justl--recipe-args recipe)))))
-             " "))
+
+    (let* ((recipe-name (justl--recipe-name recipe))
+           (recipe-args (justl--recipe-args recipe))
+           (transient-args (transient-args 'justl-help-popup))
+           (args-list (cons justl-executable
+                            (append transient-args
+                                    (list recipe-name)
+                                    (mapcar 'justl--arg-default recipe-args)))))
+      (insert (string-join args-list " ")))
     (unless no-send
       (eshell-send-input))))
 

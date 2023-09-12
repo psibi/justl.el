@@ -355,7 +355,7 @@ Logs the command run."
                              (transient-args 'justl-help-popup)
                              `(,(justl--justfile-argument justfile))))
          (json (apply 'justl--exec-to-string-with-exit-code
-                      (append base-args '("--dump" "--dump-format=json"))))
+                      (delete-dups (append base-args '("--unstable" "--dump" "--dump-format=json")))))
         ;; Obtain the unsorted declaration order separately
         (unsorted-recipes (s-split
                            " "

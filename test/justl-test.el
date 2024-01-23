@@ -45,36 +45,36 @@
   (with-current-buffer (justl--buffer-name)
     (search-forward "plan")
     (justl-exec-recipe)
-    (justl--wait-till-exit justl--output-process-buffer))
-  (with-current-buffer justl--output-process-buffer
+    (justl--wait-till-exit (justl--recipe-output-buffer "plan")))
+  (with-current-buffer (justl--recipe-output-buffer "plan")
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (should (s-contains? "planner" buf-string))))
   (kill-buffer (justl--buffer-name))
-  (kill-buffer justl--output-process-buffer))
+  (kill-buffer (justl--recipe-output-buffer "plan")))
 
 (ert-deftest justl--execute-test-exit-status ()
   (justl)
   (with-current-buffer (justl--buffer-name)
     (search-forward "plan")
     (justl-exec-recipe)
-    (justl--wait-till-exit justl--output-process-buffer))
-  (with-current-buffer justl--output-process-buffer
+    (justl--wait-till-exit (justl--recipe-output-buffer "plan")))
+  (with-current-buffer (justl--recipe-output-buffer "plan")
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (should (s-contains? "Target execution finished" buf-string))))
   (kill-buffer (justl--buffer-name))
-  (kill-buffer justl--output-process-buffer))
+  (kill-buffer (justl--recipe-output-buffer "plan")))
 
 (ert-deftest justl--fail-recipe ()
   (justl)
   (with-current-buffer (justl--buffer-name)
     (search-forward "fail")
     (justl-exec-recipe)
-    (justl--wait-till-exit justl--output-process-buffer))
-  (with-current-buffer justl--output-process-buffer
+    (justl--wait-till-exit (justl--recipe-output-buffer "fail"))
+  (with-current-buffer (justl--recipe-output-buffer "fail")
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (should (s-contains? "exited abnormally" buf-string))))
   (kill-buffer (justl--buffer-name))
-  (kill-buffer justl--output-process-buffer))
+  (kill-buffer (justl--recipe-output-buffer "fail"))))
 
 (ert-deftest justl--find-justfile-check ()
   (should (equal (f-filename (justl--find-justfile default-directory)) "justfile")))
@@ -85,13 +85,13 @@
   (with-current-buffer (justl--buffer-name)
     (search-forward "carriage-return")
     (justl-exec-recipe)
-    (justl--wait-till-exit justl--output-process-buffer))
-  (with-current-buffer justl--output-process-buffer
+    (justl--wait-till-exit (justl--recipe-output-buffer "carriage-return")))
+  (with-current-buffer (justl--recipe-output-buffer "carriage-return")
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (should (s-contains? "DONE\n" buf-string))
       (should-not (s-contains? "1/3\r2/3\r3/3\rDONE\n" buf-string))))
   (kill-buffer (justl--buffer-name))
-  (kill-buffer justl--output-process-buffer))
+  (kill-buffer (justl--recipe-output-buffer "carriage-return")))
 
 (ert-deftest justl--execute-recipe-with-color ()
   "A target printing color is handled properly."
@@ -99,12 +99,12 @@
   (with-current-buffer (justl--buffer-name)
     (search-forward "color")
     (justl-exec-recipe)
-    (justl--wait-till-exit justl--output-process-buffer))
-  (with-current-buffer justl--output-process-buffer
+    (justl--wait-till-exit (justl--recipe-output-buffer "color")))
+  (with-current-buffer (justl--recipe-output-buffer "color")
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (should (s-contains? "This is red text\n" buf-string))))
   (kill-buffer (justl--buffer-name))
-  (kill-buffer justl--output-process-buffer))
+  (kill-buffer (justl--recipe-output-buffer "color")))
 
 (ert-deftest justl--execute-default-recipe ()
   "Checks that default recipe is printed."

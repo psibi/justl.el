@@ -60,6 +60,10 @@ M-x justl-exec-recipe-in-dir
 
 To execute default recipe, call *justl-exec-default-recipe*
 
+To execute multiple recipes in parallel, customize *justl-per-recipe-buffer* to
+create dedicated buffers named /*just-RECIPE*/. This is useful to manage long
+running process.
+
 * Shortcuts
 
 On the just screen, place your cursor on a recipe:

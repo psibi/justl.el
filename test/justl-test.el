@@ -142,6 +142,22 @@
       (should (s-contains? "ver1" buf-string))))
   (kill-buffer justl--output-process-buffer))
 
+(ert-deftest justl--test-per-recipe-buffer ()
+  "This test is a copy of 'justl--execute-recipe' setting the per-recipe and hardcoding the desired buffer name."
+  (let ((current justl-per-recipe-buffer))
+    (customize-set-variable 'justl-per-recipe-buffer 't)
+    (justl)
+    (with-current-buffer (justl--buffer-name)
+      (search-forward "plan")
+      (justl-exec-recipe)
+      (justl--wait-till-exit "*just-plan*"))
+    (with-current-buffer "*just-plan*"
+      (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+        (should (s-contains? "Target execution finished" buf-string))))
+    (kill-buffer (justl--buffer-name))
+    (kill-buffer "*just-plan*")
+    (customize-set-variable 'justl-per-recipe-buffer current)))
+
 ;; (ert "justl--**")
 
 (provide 'justl-test)

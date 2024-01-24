@@ -243,14 +243,12 @@ ARGS is a plist that affects how the process is run.
 - `:buffer' name for process buffer
 - `:process' name for compilation process
 - `:mode' mode for process buffer
-- `:directory' set `default-directory'
-- `:sentinel' process sentinel"
+- `:directory' set `default-directory'"
   (let* ((buf (get-buffer-create
                (or (plist-get args :buffer) justl--output-process-buffer)))
          (process-name (or (plist-get args :process) justl--compilation-process-name))
          (mode (or (plist-get args :mode) 'justl-compile-mode))
          (directory (or (plist-get args :directory) (f-dirname justl-justfile)))
-         (sentinel (or (plist-get args :sentinel) #'justl--sentinel))
          (inhibit-read-only t))
     (setq next-error-last-buffer buf)
     (justl-compilation-setup-buffer buf directory mode)
@@ -262,7 +260,7 @@ ARGS is a plist that affects how the process is run.
         (setq-local justl-justfile (justl--justfile-from-arg (elt command 1)))
         (run-hook-with-args 'compilation-start-hook process)
         (set-process-filter process 'justl--process-filter)
-        (set-process-sentinel process (lambda (proc _) (funcall sentinel proc buf)))
+        (set-process-sentinel process (lambda (proc _) (justl--sentinel proc buf)))
         (set-process-coding-system process 'utf-8-emacs-unix 'utf-8-emacs-unix)
         (pop-to-buffer buf)))))
 

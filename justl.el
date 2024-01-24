@@ -109,6 +109,17 @@ other cases, it's a known path."
   :type 'boolean
   :safe 'booleanp)
 
+(defcustom justl-per-recipe-buffer nil
+  "If non-nil, create a new buffer per recipe."
+  :type 'boolean
+  :safe 'booleanp)
+
+(defun justl--recipe-output-buffer (recipe-name)
+  "Return the buffer name for the RECIPE-NAME."
+  (if justl-per-recipe-buffer
+      (format "*just-%s*" recipe-name)
+    justl--output-process-buffer))
+
 (defun justl--process-error-buffer (process-name)
   "Return the error buffer name for the PROCESS-NAME."
   (format "*%s:err*" process-name))
@@ -167,12 +178,14 @@ CMD is the just command as a list."
     (justl--append-to-process-buffer
      (format "[%s] \ncommand: %S" process-name cmd))))
 
-(defun justl--sentinel (process _)
-  "Sentinel function for PROCESS."
+(defun justl--sentinel (process buffer)
+  "Sentinel function for PROCESS.
+
+BUFFER is the name of the output buffer."
   (let ((process-name (process-name process))
         (inhibit-read-only t)
         (exit-status (process-exit-status process)))
-    (with-current-buffer (get-buffer justl--output-process-buffer)
+    (with-current-buffer buffer
       (goto-char (point-max))
       (if (zerop exit-status)
           (insert (format "\nTarget execution finished at %s" (substring (current-time-string) 0 19)))
@@ -230,14 +243,12 @@ ARGS is a plist that affects how the process is run.
 - `:buffer' name for process buffer
 - `:process' name for compilation process
 - `:mode' mode for process buffer
-- `:directory' set `default-directory'
-- `:sentinel' process sentinel"
+- `:directory' set `default-directory'"
   (let* ((buf (get-buffer-create
                (or (plist-get args :buffer) justl--output-process-buffer)))
          (process-name (or (plist-get args :process) justl--compilation-process-name))
          (mode (or (plist-get args :mode) 'justl-compile-mode))
          (directory (or (plist-get args :directory) (f-dirname justl-justfile)))
-         (sentinel (or (plist-get args :sentinel) #'justl--sentinel))
          (inhibit-read-only t))
     (setq next-error-last-buffer buf)
     (justl-compilation-setup-buffer buf directory mode)
@@ -249,7 +260,7 @@ ARGS is a plist that affects how the process is run.
         (setq-local justl-justfile (justl--justfile-from-arg (elt command 1)))
         (run-hook-with-args 'compilation-start-hook process)
         (set-process-filter process 'justl--process-filter)
-        (set-process-sentinel process sentinel)
+        (set-process-sentinel process (lambda (proc _) (justl--sentinel proc buf)))
         (set-process-coding-system process 'utf-8-emacs-unix 'utf-8-emacs-unix)
         (pop-to-buffer buf)))))
 
@@ -295,14 +306,15 @@ Error matching regexes from compile.el are removed."
   (setq-local overlay-arrow-string "")
   (setq next-error-overlay-arrow-position nil))
 
-(defun justl--exec (process-name args)
+(defun justl--exec (process-name recipe-name args)
   "Utility function to run commands in the proper setting.
 
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
+RECIPE-NAME is the name of the recipe.
 ARGS is a ist of arguments."
   (when (equal process-name "")
     (setq process-name justl-executable))
-  (let ((buffer-name justl--output-process-buffer)
+  (let ((buffer-name (justl--recipe-output-buffer recipe-name))
         (error-buffer (justl--process-error-buffer process-name))
         (cmd (append (list justl-executable (justl--justfile-argument)) args))
         (mode 'justl-compile-mode))
@@ -542,6 +554,7 @@ not executed."
   (let* ((recipe (justl--get-recipe-under-cursor)))
     (justl--exec
      justl-executable
+     (justl--recipe-name recipe)
      (append (transient-args 'justl-help-popup)
              (cons (justl--recipe-name recipe)
                    (mapcar 'justl--read-arg
@@ -557,6 +570,7 @@ not executed."
                              recipe-name))))
     (justl--exec
      justl-executable
+     recipe-name
      (append (transient-args 'justl-help-popup)
              (cons
               recipe-name

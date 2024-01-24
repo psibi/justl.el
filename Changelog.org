@@ -5,6 +5,7 @@
 - Add ~justl-include-private-recipes~ to show private recipes in the
   list (defaults to on).
 - Rewritten internals, using ~just~ itself to parse recipe information.
+- Add ~justl-per-recipe-buffer~ to create new buffers per recipe.
 
 * 0.13
 

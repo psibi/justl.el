@@ -11,4 +11,4 @@ build:
 # Test
 test:
 	cask emacs --batch -L . -L test -f batch-byte-compile $(cask files)
-	cask emacs --batch -L . -L test -l test/all-tests.el -f ert-run-tests-batch-and-exit
+	cask emacs --batch -L . -L test -l test/justl-test.el -f ert-run-tests-batch-and-exit

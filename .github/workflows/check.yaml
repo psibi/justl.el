@@ -40,8 +40,12 @@ jobs:
         warnings_as_errors: false
     - name: Run tests
       run: |
-        just build
-        just test
+        emacs --version
+        cask install
+        cask build
+        mv test/justfile ./justfile
+        cask emacs --batch -L . -L test -f batch-byte-compile $(cask files)
+        cask emacs --batch -L . -L test -l test/justl-test.el -f ert-run-tests-batch-and-exit
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')

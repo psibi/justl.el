@@ -1,4 +1,4 @@
-* Unreleased
+* 0.14
 
 - Respect buffer-local environments, for compatibility with ~envrc.el~
   when ~just~ is installed on a per-project basis.
@@ -6,6 +6,7 @@
   list (defaults to on).
 - Rewritten internals, using ~just~ itself to parse recipe information.
 - Add ~justl-per-recipe-buffer~ to create new buffers per recipe.
+- Use Cask for development and testing.
 
 * 0.13
 

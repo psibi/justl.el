@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         emacs_version:
-          - release-snapshot
+          - 29.2
           - 29.1
           - 28.2
           - 27.2
@@ -29,19 +29,23 @@ jobs:
     - uses: purcell/setup-emacs@master
       with:
         version: ${{ matrix.emacs_version }}
+    - uses: cask/setup-cask@v1
+      with:
+        version: 0.9.0
     - uses: leotaku/elisp-check@v1.3
       with:
         file: "justl.el"
         check: melpa
         ignore_warnings: ${{ matrix.ignore_warnings }}
         warnings_as_errors: false
-    - name: ERT tests
-      uses: leotaku/elisp-check@master
-      with:
-        file: ./test/justl-test.el
-        check: ert
-        ignore_warnings: ${{ matrix.ignore_warnings }}
-        warnings_as_errors: true
+    - name: Run tests
+      run: |
+        emacs --version
+        cask install
+        cask build
+        mv test/justfile ./justfile
+        cask emacs --batch -L . -L test -f batch-byte-compile $(cask files)
+        cask emacs --batch -L . -L test -l test/justl-test.el -f ert-run-tests-batch-and-exit
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')

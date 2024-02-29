@@ -23,7 +23,7 @@ jobs:
           - false
     steps:
     - uses: actions/checkout@v4
-    - uses: extractions/setup-just@v1
+    - uses: extractions/setup-just@v2
       with:
         just-version: 1.10.0
     - uses: purcell/setup-emacs@master

@@ -275,7 +275,7 @@ ARGS is a plist that affects how the process is run.
 (defun justl-recompile ()
   "Execute the same just target again."
   (interactive)
-  (justl--make-process justl--compile-command (list :buffer justl--output-process-buffer
+  (justl--make-process justl--compile-command (list :buffer (buffer-name)
                                                     :process "just"
                                                     :directory (if justl-justfile
                                                                    (f-dirname justl-justfile)

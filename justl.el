@@ -506,6 +506,34 @@ not executed."
   (interactive)
   (justl-exec-eshell t))
 
+(defun justl-exec-vterm (&optional no-send)
+  "Execute just recipe in vterm.
+When NO-SEND is non-nil, the command is inserted ready for editing but
+is not executed."
+  (interactive)
+  (unless (require 'vterm nil t)
+    (user-error "Package `vterm' was not found!"))
+  (let* ((recipe (justl--get-recipe-under-cursor))
+         (vterm-buffer-name (format "justl - vterm - %s" (justl--recipe-name recipe)))
+         (default-directory (f-dirname justl-justfile)))
+    (vterm)
+
+    (let* ((recipe-name (justl--recipe-name recipe))
+           (recipe-args (justl--recipe-args recipe))
+           (transient-args (transient-args 'justl-help-popup))
+           (args-list (cons justl-executable
+                            (append transient-args
+                                    (list recipe-name)
+                                    (mapcar 'justl--arg-default recipe-args)))))
+      (vterm-insert (string-join args-list " ")))
+    (unless no-send
+      (vterm-send-return))))
+
+(defun justl-no-exec-vterm ()
+  "Open vterm with the recipe but do not execute it."
+  (interactive)
+  (justl-exec-vterm t))
+
 (transient-define-argument justl--color ()
   :description "Color output"
   :class 'transient-switches

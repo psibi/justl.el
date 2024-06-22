@@ -114,6 +114,13 @@ other cases, it's a known path."
   :type 'boolean
   :safe 'booleanp)
 
+(defcustom justl-shell 'eshell
+  "Shell to use when running recipes.
+Can be either Eshell or vterm. Using vterm requires the vterm package to
+be installed."
+  :type '(choice (const eshell)
+                 (const vterm)))
+
 (defun justl--recipe-output-buffer (recipe-name)
   "Return the buffer name for the RECIPE-NAME."
   (if justl-per-recipe-buffer

@@ -51,9 +51,9 @@
 ;; ? => help popup
 ;; g => refresh
 ;; e => execute recipe
-;; E => execute recipe with eshell
+;; E => execute recipe with a shell
 ;; w => execute recipe with arguments
-;; W => open eshell without executing
+;; W => open a shell without executing
 ;;
 ;; Customize:
 ;;
@@ -62,6 +62,9 @@
 ;;
 ;; You can also control the width of the RECIPE column in the justl
 ;; buffer via `justl-recipe width`.  By default it has a value of 20.
+;;
+;; You can change the shell between `eshell' and `vterm' using the `justl-shell'
+;; variable. Using vterm requires the `vterm' package to be installed.
 ;;
 
 ;;; Code:

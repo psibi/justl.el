@@ -541,6 +541,21 @@ is not executed."
   (interactive)
   (justl-exec-vterm t))
 
+(defun justl-exec-shell (&optional no-send)
+  "Execute just recipe in `justl-shell'.
+When NO-SEND is non-nil, the command is inserted ready for editing but
+is not executed."
+  (interactive)
+  (pcase justl-shell
+    ('eshell (justl-exec-eshell no-send))
+    ('vterm (justl-exec-vterm no-send))
+    (_ (user-error "Invalid value for `justl-shell'"))))
+
+(defun justl-no-exec-shell ()
+  "Open `justl-shell' with the recipe but do not execute it."
+  (interactive)
+  (justl-exec-shell t))
+
 (transient-define-argument justl--color ()
   :description "Color output"
   :class 'transient-switches

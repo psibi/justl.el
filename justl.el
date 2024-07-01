@@ -51,9 +51,9 @@
 ;; ? => help popup
 ;; g => refresh
 ;; e => execute recipe
-;; E => execute recipe with eshell
+;; E => execute recipe with a shell
 ;; w => execute recipe with arguments
-;; W => open eshell without executing
+;; W => open a shell without executing
 ;;
 ;; Customize:
 ;;
@@ -62,6 +62,9 @@
 ;;
 ;; You can also control the width of the RECIPE column in the justl
 ;; buffer via `justl-recipe width`.  By default it has a value of 20.
+;;
+;; You can change the shell between `eshell' and `vterm' using the `justl-shell'
+;; variable. Using vterm requires the `vterm' package to be installed.
 ;;
 
 ;;; Code:
@@ -113,6 +116,13 @@ other cases, it's a known path."
   "If non-nil, create a new buffer per recipe."
   :type 'boolean
   :safe 'booleanp)
+
+(defcustom justl-shell 'eshell
+  "Shell to use when running recipes.
+Can be either Eshell or vterm. Using vterm requires the vterm package to
+be installed."
+  :type '(choice (const eshell)
+                 (const vterm)))
 
 (defun justl--recipe-output-buffer (recipe-name)
   "Return the buffer name for the RECIPE-NAME."
@@ -452,11 +462,11 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "g") 'justl--refresh-buffer)
     (define-key map (kbd "e") 'justl-exec-recipe)
-    (define-key map (kbd "E") 'justl-exec-eshell)
+    (define-key map (kbd "E") 'justl-exec-shell)
     (define-key map (kbd "?") 'justl-help-popup)
     (define-key map (kbd "h") 'justl-help-popup)
     (define-key map (kbd "w") 'justl--exec-recipe-with-args)
-    (define-key map (kbd "W") 'justl-no-exec-eshell)
+    (define-key map (kbd "W") 'justl-no-exec-shell)
     (define-key map (kbd "RET") 'justl-go-to-recipe)
     map)
   "Keymap for `justl-mode'.")
@@ -506,6 +516,49 @@ not executed."
   (interactive)
   (justl-exec-eshell t))
 
+(defun justl-exec-vterm (&optional no-send)
+  "Execute just recipe in vterm.
+When NO-SEND is non-nil, the command is inserted ready for editing but
+is not executed."
+  (interactive)
+  (unless (require 'vterm nil t)
+    (user-error "Package `vterm' was not found!"))
+  (let* ((recipe (justl--get-recipe-under-cursor))
+         (vterm-buffer-name (format "justl - vterm - %s" (justl--recipe-name recipe)))
+         (default-directory (f-dirname justl-justfile)))
+    (vterm)
+
+    (let* ((recipe-name (justl--recipe-name recipe))
+           (recipe-args (justl--recipe-args recipe))
+           (transient-args (transient-args 'justl-help-popup))
+           (args-list (cons justl-executable
+                            (append transient-args
+                                    (list recipe-name)
+                                    (mapcar 'justl--arg-default recipe-args)))))
+      (vterm-insert (string-join args-list " ")))
+    (unless no-send
+      (vterm-send-return))))
+
+(defun justl-no-exec-vterm ()
+  "Open vterm with the recipe but do not execute it."
+  (interactive)
+  (justl-exec-vterm t))
+
+(defun justl-exec-shell (&optional no-send)
+  "Execute just recipe in `justl-shell'.
+When NO-SEND is non-nil, the command is inserted ready for editing but
+is not executed."
+  (interactive)
+  (pcase justl-shell
+    ('eshell (justl-exec-eshell no-send))
+    ('vterm (justl-exec-vterm no-send))
+    (_ (user-error "Invalid value for `justl-shell'"))))
+
+(defun justl-no-exec-shell ()
+  "Open `justl-shell' with the recipe but do not execute it."
+  (interactive)
+  (justl-exec-shell t))
+
 (transient-define-argument justl--color ()
   :description "Color output"
   :class 'transient-switches
@@ -531,9 +584,9 @@ not executed."
     ;; global
     ("g" "Refresh" justl)
     ("e" "Exec" justl-exec-recipe)
-    ("E" "Exec with eshell" justl-exec-eshell)
+    ("E" "Exec with shell" justl-exec-shell)
     ("w" "Exec with args" justl--exec-recipe-with-args)
-    ("W" "Open eshell with args" justl-no-exec-eshell)
+    ("W" "Open shell with args" justl-no-exec-shell)
     ("RET" "Go to recipe" justl-go-to-recipe)
     ]
    ])

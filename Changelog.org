@@ -1,3 +1,8 @@
+* Unreleased
+
+- Kill process if it's still running before starting a new one in the same
+  buffer.
+
 * 0.14
 
 - Respect buffer-local environments, for compatibility with ~envrc.el~

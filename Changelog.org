@@ -2,6 +2,8 @@
 
 - Kill process if it's still running before starting a new one in the same
   buffer.
+- Bugfix: Use the buffer's last command for recompile, not the last one across
+  all buffers.
 
 * 0.14
 

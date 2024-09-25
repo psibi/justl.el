@@ -242,7 +242,7 @@ controls if we are going to display the process status on mode line."
               (eq compilation-scroll-output 'first-error))
           (set (make-local-variable 'compilation-auto-jump-to-next) t)))))
 
-(defvar justl--compile-command nil
+(defvar-local justl--compile-command nil
   "Last shell command used to do a compilation; default for next compilation.")
 
 (defun justl--make-process (command &optional args)

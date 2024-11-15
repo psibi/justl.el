@@ -93,10 +93,12 @@
 (defcustom justl-executable "just"
   "Location of just executable."
   :type 'file
+  :group 'justl
   :safe 'stringp)
 
 (defcustom justl-recipe-width 20
   "Width of the recipe column."
+  :group 'justl
   :type 'integer)
 
 (defcustom justl-justfile nil
@@ -105,25 +107,30 @@
 If this is NIL, it means that no justfile was found.  In any
 other cases, it's a known path."
   :type 'string
+  :group 'justl
   :local t
   :safe 'stringp)
 
 (defcustom justl-include-private-recipes nil
   "If non-nil, include private recipes in the list."
   :type 'boolean
+  :group 'justl
   :safe 'booleanp)
 
 (defcustom justl-per-recipe-buffer nil
   "If non-nil, create a new buffer per recipe."
   :type 'boolean
+  :group 'justl
   :safe 'booleanp)
 
 (defcustom justl-shell 'eshell
   "Shell to use when running recipes.
 Can be either Eshell or vterm.  Using vterm requires the vterm
 package to be installed."
+
   :type '(choice (const eshell)
-                 (const vterm)))
+                 (const vterm))
+  :group 'justl)
 
 (defun justl--recipe-output-buffer (recipe-name)
   "Return the buffer name for the RECIPE-NAME."

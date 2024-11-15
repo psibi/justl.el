@@ -243,7 +243,7 @@ controls if we are going to display the process status on mode line."
               (eq compilation-scroll-output 'first-error))
           (set (make-local-variable 'compilation-auto-jump-to-next) t)))))
 
-(defvar justl--compile-command nil
+(defvar-local justl--compile-command nil
   "Last shell command used to do a compilation; default for next compilation.")
 
 (defun justl--make-process (command &optional args)
@@ -286,6 +286,21 @@ ARGS is a plist that affects how the process is run.
 (defun justl-recompile ()
   "Execute the same just target again."
   (interactive)
+  ;; This is copied and adapted from `compilation-start'.
+  (let ((comp-proc (get-buffer-process (current-buffer))))
+    (if comp-proc
+        (if (or (not (eq (process-status comp-proc) 'run))
+                (eq (process-query-on-exit-flag comp-proc) nil)
+                (yes-or-no-p "The last target is still running; kill it? "))
+            (condition-case ()
+                (progn
+                  (interrupt-process comp-proc)
+                  (sit-for 1)
+                  (delete-process comp-proc))
+              (error nil))
+          (error "Cannot have two processes in `%s' at once"
+                 (buffer-name)))))
+
   (justl--make-process justl--compile-command (list :buffer (buffer-name)
                                                     :process "just"
                                                     :directory (if justl-justfile

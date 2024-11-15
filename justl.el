@@ -434,10 +434,13 @@ Logs the command run."
   "Return all the recipes from JUSTFILE.
 They are returned as objects, as per the JSON output of \"just --dump\"."
   (let-alist (justl--parse justfile)
-    (mapcar (lambda (x) (make-recipe :name (alist-get 'name x)
+    (let ((all-recipes (mapcar (lambda (x) (make-recipe :name (alist-get 'name x)
 				     :doc (alist-get 'doc x)
 				     :parameters (alist-get 'parameters x)
 				     :private (alist-get 'private x))) .recipes)))
+      (if justl-include-private-recipes
+	  all-recipes
+	(seq-filter (lambda (recipe) (not (justl--recipe-private-p recipe))) all-recipes)))))
 
 ;;; todo: For easily integrating it, we need something like this
 ;;; integrated upstream:
@@ -530,10 +533,7 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
              (justl--recipe-name r)
              (vector (propertize (justl--recipe-name r) 'recipe r)
                      (or (justl--recipe-desc r) ""))))
-          (seq-filter (lambda (r)
-                        (or justl-include-private-recipes
-                            (not (justl--recipe-private-p r))))
-                      recipes)))
+          recipes))
 
 (defun justl-exec-eshell (&optional no-send)
   "Execute just recipe in eshell.

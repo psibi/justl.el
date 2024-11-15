@@ -171,7 +171,7 @@ NAME is the buffer name."
 Returns the absolute path if file exists or nil if no path
 was found."
   (cl-flet*
-      ((is-justfile (s) (string= "justfile" (downcase s)))
+      ((is-justfile (s) (s-ends-with? "justfile" s t))
        (any-justfile (d) (seq-find #'is-justfile (directory-files d))))
     (when-let ((location (locate-dominating-file dir #'any-justfile)))
       (expand-file-name (any-justfile location) location))))
@@ -344,7 +344,7 @@ Error matching regexes from compile.el are removed."
 
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
 RECIPE-NAME is the name of the recipe.
-ARGS is a ist of arguments."
+ARGS is a list of arguments."
   (when (equal process-name "")
     (setq process-name justl-executable))
   (let ((buffer-name (justl--recipe-output-buffer recipe-name))
@@ -672,11 +672,10 @@ is not executed."
                              recipe-name))))
     (justl--exec
      justl-executable
-     recipe-name
+     recipe-name			; Buffer name
      (append (transient-args 'justl-help-popup)
-             (cons
-              recipe-name
-              (split-string user-args " "))))))
+	     (list recipe-name)
+	     (split-string user-args " ")))))
 
 (defun justl-go-to-recipe ()
   "Go to the recipe on justfile."

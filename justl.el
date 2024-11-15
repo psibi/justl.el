@@ -344,7 +344,7 @@ Error matching regexes from compile.el are removed."
 
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
 RECIPE-NAME is the name of the recipe.
-ARGS is a ist of arguments."
+ARGS is a list of arguments."
   (when (equal process-name "")
     (setq process-name justl-executable))
   (let ((buffer-name (justl--recipe-output-buffer recipe-name))
@@ -672,11 +672,10 @@ is not executed."
                              recipe-name))))
     (justl--exec
      justl-executable
-     recipe-name
+     recipe-name			; Buffer name
      (append (transient-args 'justl-help-popup)
-             (cons
-              recipe-name
-              (split-string user-args " "))))))
+	     (list recipe-name)
+	     (split-string user-args " ")))))
 
 (defun justl-go-to-recipe ()
   "Go to the recipe on justfile."

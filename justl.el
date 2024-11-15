@@ -576,10 +576,10 @@ is not executed."
     (let* ((recipe-name (justl--recipe-name recipe))
            (recipe-args (justl--recipe-args recipe))
            (transient-args (transient-args 'justl-help-popup))
-           (args-list (cons justl-executable
-                            (append transient-args
-                                    (list recipe-name)
-                                    (mapcar 'justl--arg-default recipe-args)))))
+           (args-list (append (list "exec" justl-executable)
+                              transient-args
+                              (list recipe-name)
+                              (mapcar 'justl--arg-default recipe-args))))
       (vterm-insert (string-join args-list " ")))
     (unless no-send
       (vterm-send-return))))

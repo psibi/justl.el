@@ -494,7 +494,7 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
            (recipe-name (completing-read "Recipes: "
                                          (mapcar 'justl--recipe-name recipes)
                                          nil t nil nil))
-           (recipe (cdr (assoc recipe-name recipes))))
+           (recipe (justl--find-recipes recipes recipe-name)))
       (justl--exec-without-justfile
        justl-executable
        (cons recipe-name
@@ -645,6 +645,10 @@ is not executed."
        (`("variable" ,name) name)
        ('nil nil)
        (_ default)))))
+
+(defun justl--find-recipes (recipes name)
+  "Return recipe from RECIPES matching NAME."
+  (seq-first (seq-filter (lambda (recipe) (string= (recipe-name recipe) name)) recipes)))
 
 (defun justl-exec-recipe ()
   "Execute just recipe."

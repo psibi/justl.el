@@ -1,9 +1,12 @@
 * Unreleased
 
+- Fix a bug with non display of private recipe.
+- Make the default of ~justl-include-private-recipes~ to nil to match
+  with just behaviour.
 - Kill process if it's still running before starting a new one in the same
   buffer.
-- Bugfix: Use the buffer's last command for recompile, not the last one across
-  all buffers.
+- Bugfix: Use the buffer's last command for recompile, not the last
+  one across all buffers.
 
 * 0.14
 

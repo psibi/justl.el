@@ -63,8 +63,9 @@
 ;; You can also control the width of the RECIPE column in the justl
 ;; buffer via `justl-recipe width`.  By default it has a value of 20.
 ;;
-;; You can change the shell between `eshell' and `vterm' using the `justl-shell'
-;; variable. Using vterm requires the `vterm' package to be installed.
+;; You can change the shell between `eshell' and `vterm' using the
+;; `justl-shell' variable.  Using vterm requires the `vterm' package to
+;; be installed.
 ;;
 
 ;;; Code:
@@ -92,10 +93,12 @@
 (defcustom justl-executable "just"
   "Location of just executable."
   :type 'file
+  :group 'justl
   :safe 'stringp)
 
 (defcustom justl-recipe-width 20
   "Width of the recipe column."
+  :group 'justl
   :type 'integer)
 
 (defcustom justl-justfile nil
@@ -104,25 +107,30 @@
 If this is NIL, it means that no justfile was found.  In any
 other cases, it's a known path."
   :type 'string
+  :group 'justl
   :local t
   :safe 'stringp)
 
-(defcustom justl-include-private-recipes t
+(defcustom justl-include-private-recipes nil
   "If non-nil, include private recipes in the list."
   :type 'boolean
+  :group 'justl
   :safe 'booleanp)
 
 (defcustom justl-per-recipe-buffer nil
   "If non-nil, create a new buffer per recipe."
   :type 'boolean
+  :group 'justl
   :safe 'booleanp)
 
 (defcustom justl-shell 'eshell
   "Shell to use when running recipes.
-Can be either Eshell or vterm. Using vterm requires the vterm package to
-be installed."
+Can be either Eshell or vterm.  Using vterm requires the vterm
+package to be installed."
+
   :type '(choice (const eshell)
-                 (const vterm)))
+                 (const vterm))
+  :group 'justl)
 
 (defun justl--recipe-output-buffer (recipe-name)
   "Return the buffer name for the RECIPE-NAME."
@@ -412,27 +420,49 @@ Logs the command run."
                             (cdr recipes-entry)))
           parsed)))))
 
+(cl-defstruct recipe
+  ;; Recipe name
+  name
+  ;; Optional recipe documentation
+  doc
+  ;; Parameters for the recipe
+  parameters
+  ;; Is the recipe private
+  private)
+
 (defun justl--get-recipes (justfile)
   "Return all the recipes from JUSTFILE.
 They are returned as objects, as per the JSON output of \"just --dump\"."
   (let-alist (justl--parse justfile)
-    (mapcar 'cdr .recipes)))
+    (mapcar (lambda (x) (make-recipe :name (alist-get 'name x)
+				     :doc (alist-get 'doc x)
+				     :parameters (alist-get 'parameters x)
+				     :private (alist-get 'private x))) .recipes)))
+
+;;; todo: For easily integrating it, we need something like this
+;;; integrated upstream:
+;;; https://github.com/casey/just/issues/2252#issuecomment-2474171211
+(defun justl--get-modules (justfile)
+  "Return all the modules from JUSTFILE.
+They are returned as objects, as per the JSON output of \"just --dump\"."
+  (let-alist (justl--parse justfile)
+    (mapcar 'car .modules)))
 
 (defun justl--recipe-name (recipe)
   "Get the name of RECIPE."
-  (let-alist recipe .name))
+  (recipe-name recipe))
 
 (defun justl--recipe-desc (recipe)
   "Get the description of RECIPE."
-  (let-alist recipe .doc))
+  (recipe-doc recipe))
 
 (defun justl--recipe-args (recipe)
   "Get the arguments for RECIPE."
-  (let-alist recipe .parameters))
+  (recipe-parameters recipe))
 
 (defun justl--recipe-private-p (recipe)
   "Return non-nil if RECIPE is private."
-  (let-alist recipe (cl-find "private" .attributes :test 'string=)))
+  (recipe-private recipe))
 
 (defun justl--arg-name (arg)
   "Get the name of argument ARG."

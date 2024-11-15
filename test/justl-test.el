@@ -10,7 +10,7 @@
 
 (ert-deftest justl--get-recipes-test ()
   (should (equal
-           (list "default" "build-cmd"  "plan" "push" "push2" "fail" "carriage-return" "color")
+           (list "default" "build-cmd"  "plan" "push" "push2" "fail" "carriage-return" "color" "_private")
            (mapcar 'justl--recipe-name (justl--get-recipes "./justfile")))))
 
 (ert-deftest justl--get-description-test ()
@@ -157,6 +157,19 @@
     (kill-buffer (justl--buffer-name))
     (kill-buffer "*just-plan*")
     (customize-set-variable 'justl-per-recipe-buffer current)))
+
+(ert-deftest justl--no-private-recipe-by-default ()
+  (justl)
+  (with-current-buffer (justl--buffer-name)
+    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+      (should-not (s-contains? "_private" buf-string)))))
+
+(ert-deftest justl--private-recipe-visible ()
+  (let ((justl-include-private-recipes t))
+      (justl))
+  (with-current-buffer (justl--buffer-name)
+    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+      (should (s-contains? "_private" buf-string)))))
 
 ;; (ert "justl--**")
 

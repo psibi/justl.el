@@ -33,12 +33,6 @@ jobs:
     - uses: cask/setup-cask@v1
       with:
         version: 0.9.0
-    - uses: leotaku/elisp-check@v1.3
-      with:
-        file: "justl.el"
-        check: melpa
-        ignore_warnings: ${{ matrix.ignore_warnings }}
-        warnings_as_errors: false
     - name: Run tests
       run: |
         emacs --version

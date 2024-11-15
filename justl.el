@@ -688,7 +688,6 @@ is not executed."
   (interactive)
   (let* ((justfile (justl--find-justfile default-directory))
          (entries (justl--get-recipes justfile)))
-    (message "foo %s" entries)
     (setq tabulated-list-entries (justl--tabulated-entries entries))
     (tabulated-list-print t)
     (message "justl-mode: Refreshed")))

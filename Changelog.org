@@ -1,3 +1,9 @@
+* Unreleased
+
+- Fix a bug with non display of private recipe.
+- Make the default of ~justl-include-private-recipes~ to nil to match
+  with just behaviour.
+
 * 0.14
 
 - Respect buffer-local environments, for compatibility with ~envrc.el~

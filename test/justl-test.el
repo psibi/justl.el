@@ -13,6 +13,11 @@
            (list "default" "build-cmd"  "plan" "push" "push2" "fail" "carriage-return" "color")
            (mapcar 'justl--recipe-name (justl--get-recipes "./justfile")))))
 
+(ert-deftest justl--finds-recipe-test ()
+  (let* ((recipes (justl--get-recipes "./justfile"))
+	 (recipe (justl--find-recipes recipes "default")))
+    (should (string= (recipe-doc recipe) "List all recipes"))))
+
 (ert-deftest justl--get-description-test ()
   (let* ((recipes (justl--get-recipes "./justfile"))
          (recipe (seq-find (lambda (r) (string= "default" (justl--recipe-name r))) recipes)))

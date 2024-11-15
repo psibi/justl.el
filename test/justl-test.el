@@ -10,7 +10,7 @@
 
 (ert-deftest justl--get-recipes-test ()
   (should (equal
-           (list "default" "build-cmd"  "plan" "push" "push2" "fail" "carriage-return" "color")
+           (list "default" "build-cmd"  "plan" "push" "push2" "fail" "carriage-return" "color" "recipe")
            (mapcar 'justl--recipe-name (justl--get-recipes "./justfile")))))
 
 (ert-deftest justl--finds-recipe-test ()
@@ -176,6 +176,20 @@
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (should (s-contains? "_private" buf-string)))))
 
+(ert-deftest justl--change-working-directory ()
+  (justl)
+  (with-current-buffer (justl--buffer-name)
+    (search-forward "recipe")
+    (justl-exec-recipe)
+    (justl--wait-till-exit "*just-recipe*"))
+  (with-current-buffer "*just-recipe*"
+    (let ((content1 (buffer-substring-no-properties (point-min) (point-max))))
+      (justl-set-new-working-dir "/tmp")
+      (justl-exec-recipe)
+      (justl--wait-till-exit "*just-recipe*")
+      (let ((content2 (buffer-substring-no-properties (point-min) (point-max))))
+	(should (string-equal content1 content2))))))
+					;
 ;; (ert "justl--**")
 
 (provide 'justl-test)

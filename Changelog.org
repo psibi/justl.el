@@ -9,6 +9,11 @@
   one across all buffers.
 - Support optional argument prompting in
   ~justl-exec-recipe-in-dir~. Fixes [[https://github.com/psibi/justl.el/issues/41][issue 41]].
+- Ability to set new working directory in justl buffers via
+  ~justl-set-new-working-dir~. This is useful to execute your recipes
+  with no-cd recipe attribute.
+- Justl buffer names are changed to include filename too. This is made
+  in preparation for supporting just modules.
 
 * 0.14
 

@@ -530,8 +530,7 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
 (defun justl--buffer-name ()
   "Return justl buffer name."
   (let ((justfile (justl--find-justfile default-directory)))
-    (format "*just [%s]*"
-            (f-dirname justfile))))
+    (format "*just [%s]*" justfile)))
 
 (defun justl--tabulated-entries (recipes)
   "Turn RECIPES to tabulated entries."

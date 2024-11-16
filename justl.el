@@ -438,6 +438,12 @@ Logs the command run."
   ;; Is the recipe private
   private)
 
+(cl-defstruct just-module
+  ;; Module name
+  name
+  ;; Optional module documentation
+  doc)
+
 (defun justl--get-recipes (justfile)
   "Return all the recipes from JUSTFILE.
 They are returned as objects, as per the JSON output of \"just --dump\"."
@@ -457,11 +463,28 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
   "Return all the modules from JUSTFILE.
 They are returned as objects, as per the JSON output of \"just --dump\"."
   (let-alist (justl--parse justfile)
-    (mapcar 'car .modules)))
+    (mapcar (lambda (x) (make-just-module :name (symbol-name (car x))
+					  :doc (alist-get 'doc (cdr x)))) .modules)))
 
 (defun justl--recipe-name (recipe)
   "Get the name of RECIPE."
-  (recipe-name recipe))
+  (cond
+   ((recipe-p recipe)
+    (recipe-name recipe))
+   ((just-module-p recipe)
+    (just-module-name recipe))
+   (t
+    nil)))
+
+(defun justl--entity-location (recipe)
+  "Return the entity text for searching purpose in RECIPE."
+  (cond
+   ((recipe-p recipe)
+    (recipe-name recipe))
+   ((just-module-p recipe)
+    (format "mod %s" (just-module-name recipe)))
+   (t
+    nil)))
 
 (defun justl--recipe-desc (recipe)
   "Get the description of RECIPE."
@@ -469,7 +492,11 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
 
 (defun justl--recipe-args (recipe)
   "Get the arguments for RECIPE."
-  (recipe-parameters recipe))
+  (cond
+   ((recipe-p recipe)
+    (recipe-parameters recipe))
+   (t
+    nil)))
 
 (defun justl--recipe-private-p (recipe)
   "Return non-nil if RECIPE is private."
@@ -532,15 +559,24 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
   (let ((justfile (justl--find-justfile default-directory)))
     (format "*just [%s]*" justfile)))
 
-(defun justl--tabulated-entries (recipes)
+(defun justl--tabulated-entries (recipes modules)
   "Turn RECIPES to tabulated entries."
-  (mapcar (lambda (r)
+  (let ((tabulated-recipes (mapcar (lambda (r)
             (list
              ;; Comparison key, used to restore line number after refresh
              (justl--recipe-name r)
-             (vector (propertize (justl--recipe-name r) 'recipe r)
+             (vector (propertize (justl--recipe-name r) 'just-entity r)
                      (or (justl--recipe-desc r) ""))))
           recipes))
+	(tabulated-modules (mapcar (lambda (m)
+				     (list
+				      (just-module-name m)
+				      (vector (propertize (just-module-name m) 'just-entity m)
+					      (if (just-module-doc m) (format "[MODULE] %s" (just-module-doc m)) "[MODULE]"))))
+				   modules)))
+    (append tabulated-recipes tabulated-modules)))
+
+
 
 (defun justl-exec-eshell (&optional no-send)
   "Execute just recipe in eshell.
@@ -687,25 +723,32 @@ is not executed."
 (defun justl-go-to-recipe ()
   "Go to the recipe on justfile."
   (interactive)
-  (let* ((recipe (justl--get-recipe-under-cursor)))
+  (let* ((recipe (justl--get-recipe-under-cursor))
+	 (end-regex (cond ((recipe-p recipe)
+			   "\\(?: .*?\\)?:")
+			  ((just-module-p recipe)
+			   ""))))
     (find-file justl-justfile)
     (goto-char (point-min))
-    (when (re-search-forward (concat "^[@]?" (regexp-quote (justl--recipe-name recipe)) "\\(?: .*?\\)?:") nil t 1)
+    (when (re-search-forward (concat "^[@]?" (regexp-quote (justl--entity-location recipe)) end-regex) nil t 1)
       (goto-char (line-beginning-position)))))
 
 (defun justl--get-recipe-under-cursor ()
   "Utility function to get the name of the recipe under the cursor."
   (let ((entry (tabulated-list-get-entry)))
     (if entry
-        (get-text-property 0 'recipe (aref entry 0))
+        (get-text-property 0 'just-entity (aref entry 0))
       (user-error "There is no recipe on the current line"))))
 
 (defun justl--refresh-buffer ()
   "Refresh justl buffer."
   (interactive)
   (let* ((justfile (justl--find-justfile default-directory))
-         (entries (justl--get-recipes justfile)))
-    (setq tabulated-list-entries (justl--tabulated-entries entries))
+         (entries (justl--get-recipes justfile))
+	 (modules (justl--get-modules justfile)))
+    (message "Modules %s" modules)
+    (message "Entries %s" (justl--tabulated-entries entries modules))
+    (setq tabulated-list-entries (justl--tabulated-entries entries modules))
     (tabulated-list-print t)
     (message "justl-mode: Refreshed")))
 
@@ -716,15 +759,18 @@ is not executed."
   (unless (justl--find-justfile default-directory)
     (error "No justfile found"))
   (justl--pop-to-buffer (justl--buffer-name))
-  (justl-mode)
+  (let* ((justfile (justl--find-justfile default-directory))
+	 (modules (justl--get-modules justfile)))
+    (message "foo: %s" (type-of (just-module-name (car modules))))
+    (justl-mode))
   (justl--refresh-buffer))
 
-(define-derived-mode justl-mode tabulated-list-mode  "Justl"
+(define-derived-mode justl-mode tabulated-list-mode "Justl"
   "Special mode for justl buffers."
   (buffer-disable-undo)
   (setq truncate-lines t)
   (setq tabulated-list-format
-        (vector (list "RECIPES" justl-recipe-width t)
+        (vector (list "RECIPES / MODULES" justl-recipe-width t)
                 (list "DESCRIPTION" 20 t)))
   (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header)

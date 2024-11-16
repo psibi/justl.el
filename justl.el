@@ -295,7 +295,7 @@ ARGS is a plist that affects how the process is run.
   "Set DIR as the new working directory.
 This is usually used with no-cd recipe attribute."
   (interactive "DNew Working Directory:")
-  (setq default-directory dir))
+  (setq-local default-directory dir))
 
 (defun justl-recompile ()
   "Execute the same just target again."

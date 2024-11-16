@@ -272,7 +272,8 @@ ARGS is a plist that affects how the process is run.
     (justl-compilation-setup-buffer buf directory mode)
     (with-current-buffer buf
       (insert (format "Just target execution started at %s \n\n" (substring (current-time-string) 0 19)))
-      (let* ((process (apply
+      (let* ((default-directory directory)
+	     (process (apply
                        #'start-file-process process-name buf command)))
         (setq justl--compile-command command)
         (setq-local justl-justfile (justl--justfile-from-arg (elt command 1)))
@@ -289,6 +290,12 @@ ARGS is a plist that affects how the process is run.
     (define-key map [remap recompile] 'justl-recompile)
     map)
   "Keymap for justl compilation log buffers.")
+
+(defun justl-set-new-working-dir (dir)
+  "Set DIR as the new working directory.
+This is usually used with no-cd recipe attribute."
+  (interactive "DNew Working Directory:")
+  (setq-local default-directory dir))
 
 (defun justl-recompile ()
   "Execute the same just target again."
@@ -358,6 +365,7 @@ ARGS is a list of arguments."
     (justl--log-command process-name cmd)
     (justl--make-process cmd (list :buffer buffer-name
                                    :process process-name
+				   :directory default-directory
                                    :mode mode))))
 
 (defun justl--exec-without-justfile (process-name args)

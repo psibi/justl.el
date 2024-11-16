@@ -10,7 +10,7 @@
 
 (ert-deftest justl--get-recipes-test ()
   (should (equal
-           (list "default" "build-cmd"  "plan" "push" "push2" "fail" "carriage-return" "color")
+           (list "default" "build-cmd"  "plan" "push" "push2" "fail" "carriage-return" "color" "recipe")
            (mapcar 'justl--recipe-name (justl--get-recipes "./justfile")))))
 
 (ert-deftest justl--finds-recipe-test ()

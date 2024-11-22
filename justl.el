@@ -132,6 +132,12 @@ package to be installed."
                  (const vterm))
   :group 'justl)
 
+(defcustom justl-pop-to-buffer-on-display t
+  "If non-nil, selects the justl buffer when it is displayed.
+If nil, displays the buffer without selecting it."
+  :type 'boolean
+  :safe 'booleanp)
+
 (defun justl--recipe-output-buffer (recipe-name)
   "Return the buffer name for the RECIPE-NAME."
   (if justl-per-recipe-buffer
@@ -146,7 +152,10 @@ package to be installed."
   "Utility function to pop to buffer or create it.
 
 NAME is the buffer name."
-  (pop-to-buffer-same-window (get-buffer-create name)))
+  (let ((buf (get-buffer-create name)))
+    (if justl-pop-to-buffer-on-display
+        (pop-to-buffer-same-window buf)
+      (display-buffer buf display-buffer--same-window-action))))
 
 (defconst justl--process-buffer "*just-process*"
   "Just process buffer name.")
@@ -281,7 +290,9 @@ ARGS is a plist that affects how the process is run.
         (set-process-filter process 'justl--process-filter)
         (set-process-sentinel process (lambda (proc _) (justl--sentinel proc buf)))
         (set-process-coding-system process 'utf-8-emacs-unix 'utf-8-emacs-unix)
-        (pop-to-buffer buf)))))
+        (if justl-pop-to-buffer-on-display
+            (pop-to-buffer buf)
+          (display-buffer buf))))))
 
 (defvar justl-compile-mode-map
   (let ((map (make-sparse-keymap)))
@@ -388,7 +399,9 @@ ARGS is a ist of arguments."
                                    :process process-name
                                    :directory default-directory
                                    :mode mode)))
-  (pop-to-buffer justl--output-process-buffer))
+  (if justl-pop-to-buffer-on-display
+      (pop-to-buffer justl--output-process-buffer)
+    (display-buffer justl--output-process-buffer)))
 
 (defun justl--exec-to-string-with-exit-code (executable &rest args)
   "Run EXECUTABLE with ARGS, throwing an error if the command fails.

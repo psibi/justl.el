@@ -136,6 +136,7 @@ package to be installed."
   "If non-nil, selects the justl buffer when it is displayed.
 If nil, displays the buffer without selecting it."
   :type 'boolean
+  :group 'justl
   :safe 'booleanp)
 
 (defun justl--recipe-output-buffer (recipe-name)

@@ -17,6 +17,7 @@
 - Add ~justl-pop-to-buffer-on-display~. When on, input focus moves to the justl
   buffer when it is displayed (the previous behavior). Otherwise the buffer is
   displayed without selecting it. (defaults to on).
+- Better defgroup integration.
 
 * 0.14
 

@@ -735,6 +735,7 @@ is not executed."
 
 (define-derived-mode justl-mode tabulated-list-mode  "Justl"
   "Special mode for justl buffers."
+  :group 'justl
   (buffer-disable-undo)
   (setq truncate-lines t)
   (setq tabulated-list-format

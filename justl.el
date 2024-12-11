@@ -133,8 +133,8 @@ package to be installed."
   :group 'justl)
 
 (defcustom justl-pop-to-buffer-on-display t
-  "If non-nil, selects the justl buffer when it is displayed.
-If nil, displays the buffer without selecting it."
+  "If non-nil, selects the justl output buffer when it is displayed.
+If nil, displays the output buffer without selecting it."
   :type 'boolean
   :group 'justl
   :safe 'booleanp)
@@ -153,10 +153,7 @@ If nil, displays the buffer without selecting it."
   "Utility function to pop to buffer or create it.
 
 NAME is the buffer name."
-  (let ((buf (get-buffer-create name)))
-    (if justl-pop-to-buffer-on-display
-        (pop-to-buffer-same-window buf)
-      (display-buffer buf display-buffer--same-window-action))))
+  (pop-to-buffer-same-window (get-buffer-create name)))
 
 (defconst justl--process-buffer "*just-process*"
   "Just process buffer name.")

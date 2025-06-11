@@ -188,7 +188,7 @@ was found."
 
 DIR represents the directory where search will be carried out.
 It searches either for the filename justfile or .justfile"
-  (when-let ((justfile-path (justl--find-any-justfile dir)))
+  (when-let ((justfile-path (or (justl--find-any-justfile dir) (getenv "JUST_JUSTFILE"))))
     (setq-local justl-justfile justfile-path)
     justfile-path))
 

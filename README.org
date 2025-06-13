@@ -97,10 +97,6 @@ W => open a shell without executing
   /justl-shell/ variable. Using vterm requires [[https://github.com/akermu/emacs-libvterm][the vterm package]] to be
   installed.
 
-* Future
-
-- Implement justfile variables related features.
-
 * Releases
 
 See the [[file:Changelog.org][Changelog.org]] for the list of changes.

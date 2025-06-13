@@ -176,6 +176,73 @@
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (should (s-contains? "_private" buf-string)))))
 
+(ert-deftest justl--show-modules-test ()
+  "Test that justl--show-modules displays modules from a justfile with modules."
+  (let* ((temp-dir (make-temp-file "justl-test" t))
+         (justfile-path (expand-file-name "justfile" temp-dir))
+         (module-path (expand-file-name "recipes.just" temp-dir))
+         (default-directory temp-dir))
+    (unwind-protect
+        (progn
+          ;; Create a module file
+          (write-region "# Module for testing
+test-recipe:
+    echo \"hello from module\"
+" nil module-path)
+          ;; Create main justfile that imports the module
+          (write-region "mod recipes \"recipes.just\"
+
+default:
+    echo \"main recipe\"
+" nil justfile-path)
+          ;; Test that justl--show-modules works
+          (justl--show-modules)
+          (with-current-buffer (justl--buffer-name t)
+            (let ((buf-string (buffer-string)))
+              (should (search-forward "recipes" nil t)))))
+      ;; Cleanup
+      (when (get-buffer (justl--buffer-name t))
+        (kill-buffer (justl--buffer-name t)))
+      (delete-directory temp-dir t))))
+
+(ert-deftest justl--modules-keybinding-test ()
+  "Test that 'm' keybinding in justl buffer shows modules."
+  (let* ((temp-dir (make-temp-file "justl-test" t))
+         (justfile-path (expand-file-name "justfile" temp-dir))
+         (module-path (expand-file-name "recipes.just" temp-dir))
+         (default-directory temp-dir))
+    (unwind-protect
+        (progn
+          ;; Create a module file
+          (write-region "# Module for testing
+test-recipe:
+    echo \"hello from module\"
+" nil module-path)
+          ;; Create main justfile that imports the module
+          (write-region "#Some module descriptio
+mod recipes \"recipes.just\"
+
+default:
+    echo \"main recipe\"
+" nil justfile-path)
+          ;; Open justl buffer
+          (justl)
+          (with-current-buffer (justl--buffer-name nil)
+            ;; Simulate pressing 'm' key
+            (call-interactively (key-binding (kbd "m")))
+            ;; Check that modules buffer was created and contains module
+            (with-current-buffer (justl--buffer-name t)
+              (let ((buf-string (buffer-string)))
+		(should (s-contains? "Some module descri" buf-string))
+                (should (search-forward "recipes" nil t))
+		))))
+      ;; Cleanup
+      (when (get-buffer (justl--buffer-name nil))
+        (kill-buffer (justl--buffer-name nil)))
+      (when (get-buffer (justl--buffer-name t))
+        (kill-buffer (justl--buffer-name t)))
+      (delete-directory temp-dir t))))
+
 ;; (ert "justl--**")
 
 (provide 'justl-test)

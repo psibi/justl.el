@@ -125,11 +125,12 @@ other cases, it's a known path."
 
 (defcustom justl-shell 'eshell
   "Shell to use when running recipes.
-Can be either Eshell or vterm.  Using vterm requires the vterm
-package to be installed."
+Can be either Eshell, vterm, or eat.  Using vterm requires the vterm
+package to be installed.  Using eat requires the eat package to be installed."
 
   :type '(choice (const eshell)
-                 (const vterm))
+                 (const vterm)
+                 (const eat))
   :group 'justl)
 
 (defcustom justl-pop-to-buffer-on-display t
@@ -618,6 +619,34 @@ is not executed."
   (interactive)
   (justl-exec-vterm t))
 
+(defun justl-exec-eat (&optional no-send)
+  "Execute just recipe in eat.
+When NO-SEND is non-nil, the command is inserted ready for editing but
+is not executed."
+  (interactive)
+  (unless (require 'eat nil t)
+    (user-error "Package `eat' was not found!"))
+  (let* ((recipe (justl--get-recipe-under-cursor))
+         (eat-buffer-name (format "justl - eat - %s" (justl--recipe-name recipe)))
+         (default-directory (f-dirname justl-justfile)))
+    (let ((eat-buffer (eat eat-buffer-name)))
+      (with-current-buffer eat-buffer
+        (let* ((recipe-name (justl--recipe-name recipe))
+               (recipe-args (justl--recipe-args recipe))
+               (transient-args (transient-args 'justl-help-popup))
+               (args-list (cons justl-executable
+                                (append transient-args
+                                        (list recipe-name)
+                                        (mapcar 'justl--arg-default recipe-args)))))
+          (eat-term-send-string eat-terminal (string-join args-list " "))
+          (unless no-send
+            (eat-term-send-string eat-terminal "\r")))))))
+
+(defun justl-no-exec-eat ()
+  "Open eat with the recipe but do not execute it."
+  (interactive)
+  (justl-exec-eat t))
+
 (defun justl-exec-shell (&optional no-send)
   "Execute just recipe in `justl-shell'.
 When NO-SEND is non-nil, the command is inserted ready for editing but
@@ -626,6 +655,7 @@ is not executed."
   (pcase justl-shell
     ('eshell (justl-exec-eshell no-send))
     ('vterm (justl-exec-vterm no-send))
+    ('eat (justl-exec-eat no-send))
     (_ (user-error "Invalid value for `justl-shell'"))))
 
 (defun justl-no-exec-shell ()

@@ -1,4 +1,4 @@
-* Unreleased
+* 0.15
 
 - Fix a bug with non display of private recipe.
 - Make the default of ~justl-include-private-recipes~ to nil to match
@@ -18,6 +18,8 @@
   output buffer when it is displayed (the previous behavior). Otherwise the
   output buffer is displayed without selecting it. (defaults to on).
 - Better defgroup integration.
+- [[https://github.com/psibi/justl.el/pull/70][Modules support]]
+- Check for fallback location with JUST_JUSTFILE environment variable.
 
 * 0.14
 

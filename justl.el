@@ -19,7 +19,7 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 ;; USA
 
-;; Version: 0.14
+;; Version: 0.15
 ;; Author: Sibi Prabakaran
 ;; Keywords: just justfile tools processes
 ;; URL: https://github.com/psibi/justl.el
@@ -534,14 +534,15 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
     (define-key map (kbd "h") 'justl-help-popup)
     (define-key map (kbd "w") 'justl--exec-recipe-with-args)
     (define-key map (kbd "W") 'justl-no-exec-shell)
+    (define-key map (kbd "m")  'justl--show-modules)
     (define-key map (kbd "RET") 'justl-go-to-recipe)
     map)
   "Keymap for `justl-mode'.")
 
-(defun justl--buffer-name ()
+(defun justl--buffer-name (is-module)
   "Return justl buffer name."
   (let ((justfile (justl--find-justfile default-directory)))
-    (format "*just [%s]*" justfile)))
+    (format "*just [%s] %s*" justfile (if is-module "(Module)" ""))))
 
 (defun justl--tabulated-entries (recipes)
   "Turn RECIPES to tabulated entries."
@@ -552,6 +553,16 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
              (vector (propertize (justl--recipe-name r) 'recipe r)
                      (or (justl--recipe-desc r) ""))))
           recipes))
+
+(defun justl--tabulated-modules-entries (modules)
+  "Turn MODULES to tabulated entries."
+  (mapcar (lambda (m)
+            (list
+             ;; Comparison key, used to restore line number after refresh
+             (just-module-name m)
+             (vector (propertize (just-module-name m) 'module m)
+                     (or (just-module-doc m) ""))))
+          modules))
 
 (defun justl-exec-eshell (&optional no-send)
   "Execute just recipe in eshell.
@@ -650,9 +661,15 @@ is not executed."
     ("E" "Exec with shell" justl-exec-shell)
     ("w" "Exec with args" justl--exec-recipe-with-args)
     ("W" "Open shell with args" justl-no-exec-shell)
+    ("m" "Show modules" justl--show-modules)
     ("RET" "Go to recipe" justl-go-to-recipe)
     ]
    ])
+
+(defun justl--show-modules ()
+  "Open modules buffer."
+  (interactive)
+  (justl-module))
 
 (defun justl--read-arg (arg)
   "Read a value for ARG from the minibuffer."
@@ -711,14 +728,49 @@ is not executed."
         (get-text-property 0 'recipe (aref entry 0))
       (user-error "There is no recipe on the current line"))))
 
+(defun justl--get-module-under-cursor ()
+  "Utility function to get the name of the module under the cursor."
+  (let ((entry (tabulated-list-get-entry)))
+    (if entry
+        (get-text-property 0 'module (aref entry 0))
+      (user-error "There is no module on the current line"))))
+
 (defun justl--refresh-buffer ()
   "Refresh justl buffer."
   (interactive)
   (let* ((justfile (justl--find-justfile default-directory))
          (entries (justl--get-recipes justfile)))
     (setq tabulated-list-entries (justl--tabulated-entries entries))
+    (tabulated-list-print t)))
+
+(cl-defstruct just-module
+  ;; Module name
+  name
+  ;; Optional module documentation
+  doc
+  ;; Source path of the module
+  source
+  )
+
+(defun justl--module-refresh-buffer ()
+  "Refresh justl module buffer."
+  (interactive)
+  (let* ((justfile (justl--find-justfile default-directory))
+         (modules (justl--get-modules justfile)))
+    (setq tabulated-list-entries (justl--tabulated-modules-entries modules))
     (tabulated-list-print t)
-    (message "justl-mode: Refreshed")))
+    (message "justl-module-mode: Refreshed")))
+
+;;; todo: For easily integrating it, we need something like this
+;;; integrated upstream:
+;;; https://github.com/casey/just/issues/2252#issuecomment-2474171211
+(defun justl--get-modules (justfile)
+  "Return all the modules from JUSTFILE.
+They are returned as objects, as per the JSON output of \"just --dump\"."
+  (let-alist (justl--parse justfile)
+    (mapcar (lambda (x) (make-just-module :name (symbol-name (car x))
+					  :doc (alist-get 'doc (cdr x))
+					  :source (alist-get 'source (cdr x)))) .modules)))
 
 ;;;###autoload
 (defun justl ()
@@ -726,7 +778,7 @@ is not executed."
   (interactive)
   (unless (justl--find-justfile default-directory)
     (error "No justfile found"))
-  (justl--pop-to-buffer (justl--buffer-name))
+  (justl--pop-to-buffer (justl--buffer-name nil))
   (justl-mode)
   (justl--refresh-buffer))
 
@@ -742,6 +794,86 @@ is not executed."
   (tabulated-list-init-header)
   (tabulated-list-print t)
   (hl-line-mode 1))
+
+;;;###autoload
+(defun justl-module ()
+  "Invoke the justl-module buffer."
+  (interactive)
+  (unless (justl--find-justfile default-directory)
+    (error "No justfile found"))
+  (justl--pop-to-buffer (justl--buffer-name t))
+  (justl-module-mode)
+  (justl--module-refresh-buffer))
+
+(defvar justl-module-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "g") 'justl--module-refresh-buffer)
+    (define-key map (kbd "e") 'justl-exec-module)
+    (define-key map (kbd "?") 'justl-module-help-popup)
+    (define-key map (kbd "h") 'justl-module-help-popup)
+    (define-key map (kbd "o") 'justl--module-open-justl)
+    (define-key map (kbd "RET") 'justl--go-to-module)
+    map)
+  "Keymap for `justl-module-mode'.")
+
+(define-derived-mode justl-module-mode tabulated-list-mode  "Justl (M)"
+  "Special mode for justl module buffers."
+  :group 'justl
+  (buffer-disable-undo)
+  (setq truncate-lines t)
+  (setq tabulated-list-format
+        (vector (list "MODULES" justl-recipe-width t)
+                (list "DESCRIPTION" 20 t)))
+  (setq tabulated-list-sort-key nil)
+  (tabulated-list-init-header)
+  (tabulated-list-print t)
+  (hl-line-mode 1))
+
+(transient-define-prefix justl-module-help-popup ()
+  "Justl Module Menu."
+  [["Arguments"
+    ("-s" "Clear shell arguments" "--clear-shell-args")
+    ("-d" "Dry run" "--dry-run")
+    ("-e" "Disable .env file" "--no-dotenv")
+    ("-h" "Highlight" "--highlight")
+    ("-n" "Disable Highlight" "--no-highlight")
+    ("-q" "Quiet" "--quiet")
+    ("-v" "Verbose output" "--verbose")
+    ("-u" "Unstable" "--unstable")
+    (justl--color)
+    ]
+   ["Actions"
+    ;; global
+    ("g" "Refresh" justl-module)
+    ("e" "Exec" justl-exec-module)
+    ("o" "Open justl buffer for the module" justl--module-open-justl)
+    ("RET" "Go to module" justl--go-to-module)
+    ]
+   ])
+
+(defun justl-exec-module ()
+  "Execute first recipe of the module."
+  (interactive)
+  (let* ((module (justl--get-module-under-cursor))
+	 (default-directory (f-dirname (just-module-source module))))
+    (justl--exec
+     justl-executable
+     (just-module-name module)
+     (append (transient-args 'justl-module-help-popup) (cons (just-module-name module) nil)))))
+
+(defun justl--go-to-module ()
+  "Go to the module path."
+  (interactive)
+  (let* ((module (justl--get-module-under-cursor)))
+    (find-file (just-module-source module))
+    (goto-char (point-min))))
+
+(defun justl--module-open-justl ()
+  "Open justl buffer for that specific module."
+  (interactive)
+  (let* ((module (justl--get-module-under-cursor))
+	 (default-directory (f-dirname (just-module-source module))))
+    (justl)))
 
 (provide 'justl)
 ;;; justl.el ends here

@@ -372,7 +372,7 @@ default:
       (should-error (justl-exec-eat) :type 'user-error)))
   (kill-buffer (justl--buffer-name nil)))
 
-(ert "justl--exec-shell-eat-integration-test")
+;; (ert "justl--**")
 
 (provide 'justl-test)
 ;;; justl-test.el ends here

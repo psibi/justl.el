@@ -629,6 +629,7 @@ is not executed."
   (let* ((recipe (justl--get-recipe-under-cursor))
          (eat-buffer-name (format "justl - eat - %s" (justl--recipe-name recipe)))
          (default-directory (f-dirname justl-justfile)))
+    (eat)
     (let ((eat-buffer (eat eat-buffer-name)))
       (with-current-buffer eat-buffer
         (let* ((recipe-name (justl--recipe-name recipe))
@@ -638,7 +639,8 @@ is not executed."
                                 (append transient-args
                                         (list recipe-name)
                                         (mapcar 'justl--arg-default recipe-args)))))
-          (eat-term-send-string eat-terminal (string-join args-list " "))
+          (let ((command-string (string-join args-list " ")))
+            (eat-term-send-string eat-terminal command-string))
           (unless no-send
             (eat-term-send-string eat-terminal "\r")))))))
 

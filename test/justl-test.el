@@ -243,7 +243,136 @@ default:
         (kill-buffer (justl--buffer-name t)))
       (delete-directory temp-dir t))))
 
-;; (ert "justl--**")
+;; Tests for eat shell functionality
+
+(ert-deftest justl--exec-eat-test ()
+  "Test that justl-exec-eat creates eat buffer and sends command."
+  (skip-unless (require 'eat nil t))
+  (justl)
+  (with-current-buffer (justl--buffer-name nil)
+    (search-forward "plan")
+    (let ((initial-buffers (buffer-list)))
+      ;; Call justl-exec-eat with no-send=t to avoid actually executing
+      (justl-exec-eat t)
+      ;; Check that an eat buffer was created
+      (let ((eat-buffers (seq-filter (lambda (buf)
+                                       (with-current-buffer buf
+                                         (and (bound-and-true-p eat-terminal)
+                                              (string-match-p "justl - eat - plan" (buffer-name buf)))))
+                                     (buffer-list))))
+        (should (> (length eat-buffers) 0))
+        ;; Clean up eat buffer
+        (when eat-buffers
+          (mapc 'kill-buffer eat-buffers)))))
+  (kill-buffer (justl--buffer-name nil)))
+
+(ert-deftest justl--exec-eat-buffer-naming-test ()
+  "Test that justl-exec-eat creates buffer with correct name."
+  (skip-unless (require 'eat nil t))
+  (justl)
+  (with-current-buffer (justl--buffer-name nil)
+    (search-forward "plan")
+    (justl-exec-eat t)
+    ;; Check buffer name format
+    (let ((eat-buffer (seq-find (lambda (buf)
+                                  (string-match-p "justl - eat - plan" (buffer-name buf)))
+                                (buffer-list))))
+      (should eat-buffer)
+      (should (string-match-p "^justl - eat - plan" (buffer-name eat-buffer)))
+      (kill-buffer eat-buffer)))
+  (kill-buffer (justl--buffer-name nil)))
+
+(ert-deftest justl--exec-eat-terminal-variable-test ()
+  "Test that eat-terminal variable is properly set in eat buffer."
+  (skip-unless (require 'eat nil t))
+  (justl)
+  (with-current-buffer (justl--buffer-name nil)
+    (search-forward "plan")
+    (justl-exec-eat t)
+    (let ((eat-buffer (seq-find (lambda (buf)
+                                  (string-match-p "justl - eat - plan" (buffer-name buf)))
+                                (buffer-list))))
+      (should eat-buffer)
+      (with-current-buffer eat-buffer
+        ;; Check that eat-terminal is bound and is a valid terminal
+        (should (boundp 'eat-terminal))
+        (should eat-terminal))
+      (kill-buffer eat-buffer)))
+  (kill-buffer (justl--buffer-name nil)))
+
+(ert-deftest justl--no-exec-eat-test ()
+  "Test that justl-no-exec-eat works correctly."
+  (skip-unless (require 'eat nil t))
+  (justl)
+  (with-current-buffer (justl--buffer-name nil)
+    (search-forward "plan")
+    (justl-no-exec-eat)
+    ;; Should create eat buffer but not execute
+    (let ((eat-buffer (seq-find (lambda (buf)
+                                  (string-match-p "justl - eat - plan" (buffer-name buf)))
+                                (buffer-list))))
+      (should eat-buffer)
+      (kill-buffer eat-buffer)))
+  (kill-buffer (justl--buffer-name nil)))
+
+(ert-deftest justl--exec-shell-eat-integration-test ()
+  "Test that justl-exec-shell works with eat backend."
+  (skip-unless (require 'eat nil t))
+  (let ((original-shell justl-shell))
+    (unwind-protect
+        (progn
+          (setq justl-shell 'eat)
+          (justl)
+          (with-current-buffer (justl--buffer-name nil)
+            (search-forward "plan")
+            (justl-exec-shell t)
+            ;; Should create eat buffer when justl-shell is 'eat
+            (let ((eat-buffer (seq-find (lambda (buf)
+                                          (string-match-p "justl - eat - plan" (buffer-name buf)))
+                                        (buffer-list))))
+              (should eat-buffer)
+              (kill-buffer eat-buffer))))
+      ;; Restore original shell setting
+      (setq justl-shell original-shell))
+    (kill-buffer (justl--buffer-name nil))))
+
+(ert-deftest justl--no-exec-shell-eat-integration-test ()
+  "Test that justl-no-exec-shell works with eat backend."
+  (skip-unless (require 'eat nil t))
+  (let ((original-shell justl-shell))
+    (unwind-protect
+        (progn
+          (setq justl-shell 'eat)
+          (justl)
+          (with-current-buffer (justl--buffer-name nil)
+            (search-forward "plan")
+            (justl-no-exec-shell)
+            ;; Should create eat buffer when justl-shell is 'eat
+            (let ((eat-buffer (seq-find (lambda (buf)
+                                          (string-match-p "justl - eat - plan" (buffer-name buf)))
+                                        (buffer-list))))
+              (should eat-buffer)
+              (kill-buffer eat-buffer))))
+      ;; Restore original shell setting
+      (setq justl-shell original-shell))
+    (kill-buffer (justl--buffer-name nil))))
+
+(ert-deftest justl--exec-eat-error-handling-test ()
+  "Test that justl-exec-eat handles missing eat package gracefully."
+  ;; Mock eat package unavailability
+  (cl-letf (((symbol-function 'require)
+             (lambda (feature &optional filename noerror)
+               (if (eq feature 'eat)
+                   nil
+                 (funcall (symbol-function 'require) feature filename noerror)))))
+    (justl)
+    (with-current-buffer (justl--buffer-name nil)
+      (search-forward "plan")
+      ;; Should signal user-error when eat package is not found
+      (should-error (justl-exec-eat) :type 'user-error)))
+  (kill-buffer (justl--buffer-name nil)))
+
+(ert "justl--exec-shell-eat-integration-test")
 
 (provide 'justl-test)
 ;;; justl-test.el ends here

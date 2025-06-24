@@ -503,6 +503,7 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
   (when arg
     (cadr (s-split "--justfile=" arg))))
 
+;;;###autoload
 (defun justl-exec-recipe-in-dir ()
   "Populate and execute the selected recipe."
   (interactive)
@@ -520,6 +521,7 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
              (mapcar 'justl--read-arg
                      (justl--recipe-args recipe)))))))
 
+;;;###autoload
 (defun justl-exec-default-recipe ()
   "Execute default recipe."
   (interactive)

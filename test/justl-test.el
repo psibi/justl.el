@@ -122,7 +122,7 @@
 
 (ert-deftest justl--execute-interactive-recipe ()
   "Checks justl-exec-recipe-in-dir indirectly (success case)."
-  (justl--exec-without-justfile "just" (list "plan"))
+  (justl--exec-without-justfile "just" (list "plan") justl--output-process-buffer)
   (justl--wait-till-exit justl--output-process-buffer)
   (with-current-buffer justl--output-process-buffer
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
@@ -131,7 +131,7 @@
 
 (ert-deftest justl--execute-interactive-recipe-failure ()
   "Checks justl-exec-recipe-in-dir indrectly (failure case)."
-  (justl--exec-without-justfile "just" (list "plan_non_existent"))
+  (justl--exec-without-justfile "just" (list "plan_non_existent") justl--output-process-buffer)
   (justl--wait-till-exit justl--output-process-buffer)
   (with-current-buffer justl--output-process-buffer
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
@@ -140,7 +140,7 @@
 
 (ert-deftest justl--execute-interactive-recipe-multiple-args ()
   "Checks justl-exec-recipe-in-dir indrectly (failure case)."
-  (justl--exec-without-justfile "just" (list "push2" "ver1" "ver2"))
+  (justl--exec-without-justfile "just" (list "push2" "ver1" "ver2") justl--output-process-buffer)
   (justl--wait-till-exit justl--output-process-buffer)
   (with-current-buffer justl--output-process-buffer
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))

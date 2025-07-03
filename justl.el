@@ -377,15 +377,15 @@ ARGS is a list of arguments."
 				   :directory default-directory
                                    :mode mode))))
 
-(defun justl--exec-without-justfile (process-name args)
+(defun justl--exec-without-justfile (process-name args buffer-name)
   "Utility function to run commands in the proper setting.
 
 PROCESS-NAME is an identifier for the process.  Default to \"just\".
-ARGS is a ist of arguments."
+ARGS is a ist of arguments.
+BUFFER-NAME is the output buffer name."
   (when (equal process-name "")
     (setq process-name justl-executable))
-  (let ((buffer-name justl--output-process-buffer)
-        (error-buffer (justl--process-error-buffer process-name))
+  (let ((error-buffer (justl--process-error-buffer process-name))
         (cmd (append (list justl-executable) args))
         (mode 'justl-compile-mode))
     (when (get-buffer buffer-name)
@@ -398,8 +398,8 @@ ARGS is a ist of arguments."
                                    :directory default-directory
                                    :mode mode)))
   (if justl-pop-to-buffer-on-display
-      (pop-to-buffer justl--output-process-buffer)
-    (display-buffer justl--output-process-buffer)))
+      (pop-to-buffer buffer-name)
+    (display-buffer buffer-name)))
 
 (defun justl--exec-to-string-with-exit-code (executable &rest args)
   "Run EXECUTABLE with ARGS, throwing an error if the command fails.
@@ -519,13 +519,14 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
        justl-executable
        (cons recipe-name
              (mapcar 'justl--read-arg
-                     (justl--recipe-args recipe)))))))
+                     (justl--recipe-args recipe)))
+       (justl--recipe-output-buffer recipe-name)))))
 
 ;;;###autoload
 (defun justl-exec-default-recipe ()
   "Execute default recipe."
   (interactive)
-  (justl--exec-without-justfile justl-executable nil))
+  (justl--exec-without-justfile justl-executable nil (justl--recipe-output-buffer "default")))
 
 (defvar justl-mode-map
   (let ((map (make-sparse-keymap)))

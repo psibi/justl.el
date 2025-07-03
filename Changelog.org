@@ -20,7 +20,8 @@
 - Better defgroup integration.
 - [[https://github.com/psibi/justl.el/pull/70][Modules support]]
 - Check for fallback location with JUST_JUSTFILE environment variable.
-- Bugfix: handle ~justl-per-recipe-buffer~ with ~justl--exec-without-justfile~.
+- Bugfix: handle ~justl-per-recipe-buffer~ with ~justl-exec-recipe-in-dir~
+  and ~justl-exec-default-recipe~.
 
 * 0.14
 

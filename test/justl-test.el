@@ -149,8 +149,7 @@
 
 (ert-deftest justl--test-per-recipe-buffer ()
   "This test is a copy of 'justl--execute-recipe' setting the per-recipe and hardcoding the desired buffer name."
-  (let ((current justl-per-recipe-buffer))
-    (customize-set-variable 'justl-per-recipe-buffer 't)
+  (let ((justl-per-recipe-buffer t))
     (justl)
     (with-current-buffer (justl--buffer-name nil)
       (search-forward "plan")
@@ -160,8 +159,27 @@
       (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
         (should (s-contains? "Target execution finished" buf-string))))
     (kill-buffer (justl--buffer-name nil))
-    (kill-buffer "*just-plan*")
-    (customize-set-variable 'justl-per-recipe-buffer current)))
+    (kill-buffer "*just-plan*")))
+
+(ert-deftest justl--per-recipe-buffer-execute-default-recipe ()
+  "This test is a copy of 'justl--execute-default-recipe' setting the per-recipe and hardcoding the desired buffer name."
+  (let ((justl-per-recipe-buffer t))
+    (justl-exec-default-recipe)
+    (justl--wait-till-exit "*just-default*")
+    (with-current-buffer "*just-default*"
+      (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+        (should (s-contains? "Available recipes:\n" buf-string))))
+    (kill-buffer "*just-default*")))
+
+(ert-deftest justl--per-recipe-buffer-execute-interactive-recipe ()
+  "This test is a copy of 'justl--execute-interactive-recipe' setting the per-recipe and hardcoding the desired buffer name."
+  (let ((justl-per-recipe-buffer t))
+    (justl--exec-without-justfile "just" (list "plan") "*just-plan*")
+    (justl--wait-till-exit "*just-plan*")
+    (with-current-buffer "*just-plan*"
+      (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+        (should (s-contains? "planner" buf-string))))
+    (kill-buffer "*just-plan*")))
 
 (ert-deftest justl--no-private-recipe-by-default ()
   (justl)

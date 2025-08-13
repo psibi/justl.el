@@ -22,7 +22,7 @@ jobs:
         ignore_warnings:
           - false
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: extractions/setup-just@v3
       with:
         just-version: 1.40.0

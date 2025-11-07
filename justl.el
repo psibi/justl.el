@@ -504,6 +504,20 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
   (when arg
     (cadr (s-split "--justfile=" arg))))
 
+(defvar justl-recipes nil
+  "Set of recipes loaded for `justl-exec-recipe-in-dir'")
+
+(defun justl-completion-annotation (candidate)
+  "Annotation function for `justl-exec-recipe-in-dir'."
+  (let* ((recipes justl-recipes)
+         (doc (cl-some
+               (lambda (recipe)
+                 (when (string= (justl--recipe-name recipe) candidate)
+                   (justl--recipe-desc recipe)))
+               recipes)))
+    (when doc
+      (concat  (propertize (concat " -- " doc) 'face 'font-lock-comment-face)))))
+
 ;;;###autoload
 (defun justl-exec-recipe-in-dir ()
   "Populate and execute the selected recipe."
@@ -511,9 +525,15 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
   (let* ((justfile (justl--find-justfile default-directory)))
     (unless justfile
       (error "No justfile found"))
-    (let* ((recipes (justl--get-recipes justfile))
-           (recipe-name (completing-read "Recipes: "
-                                         (mapcar 'justl--recipe-name recipes)
+    (setq justl-recipes (justl--get-recipes justfile))
+    (let* ((recipes justl-recipes)
+           (recipe-names (mapcar 'justl--recipe-name justl-recipes))
+           (recipe-name (completing-read "Recipe: "
+                                         (lambda (string pred action)
+                                           (if (eq action 'metadata)
+                                               '(metadata (annotation-function . justl-completion-annotation)
+                                                          (category . just-recipe))
+                                             (complete-with-action action recipe-names string pred)))
                                          nil t nil nil))
            (recipe (justl--find-recipes recipes recipe-name)))
       (justl--exec-without-justfile

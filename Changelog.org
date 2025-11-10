@@ -1,3 +1,7 @@
+* Unreleased
+
+- Add annotation function for ~justl-exec-recipe-in-dir~ ([[https://github.com/psibi/justl.el/pull/84][#84]]).
+
 * 0.15
 
 - Fix a bug with non display of private recipe.

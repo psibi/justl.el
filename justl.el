@@ -504,7 +504,7 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
   (when arg
     (cadr (s-split "--justfile=" arg))))
 
-(defvar justl--recipes nil
+(defvar-local justl--recipes nil
   "Set of recipes loaded for `justl-exec-recipe-in-dir'")
 
 (defun justl-completion-annotation (candidate)

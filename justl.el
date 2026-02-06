@@ -509,7 +509,7 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
 
 (defun justl-completion-annotation (candidate)
   "Annotation function for `justl-exec-recipe-in-dir'."
-  (let* ((recipes justl--recipes)
+  (let* ((recipes (buffer-local-value 'justl--recipes (window-buffer (minibuffer-selected-window))))
          (doc (cl-some
                (lambda (recipe)
                  (when (string= (justl--recipe-name recipe) candidate)

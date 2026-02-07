@@ -1,9 +1,6 @@
 * Unreleased
 
 - Add annotation function for ~justl-exec-recipe-in-dir~ ([[https://github.com/psibi/justl.el/pull/84][#84]], [[https://github.com/psibi/justl.el/pull/86][#86]]).
-
-* 0.15
-
 - Fix a bug with non display of private recipe.
 - Make the default of ~justl-include-private-recipes~ to nil to match
   with just behaviour.

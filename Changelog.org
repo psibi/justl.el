@@ -1,5 +1,8 @@
 * Unreleased
 
+- Priority the file named "justfile" if there are multiple just files
+  present in a directory. This becomes relevant specifically with
+  modules which enables this kind of workflow.
 - Add annotation function for ~justl-exec-recipe-in-dir~ ([[https://github.com/psibi/justl.el/pull/84][#84]], [[https://github.com/psibi/justl.el/pull/86][#86]]).
 - Fix a bug with non display of private recipe.
 - Make the default of ~justl-include-private-recipes~ to nil to match

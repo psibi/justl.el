@@ -180,7 +180,10 @@ Returns the absolute path if file exists or nil if no path
 was found."
   (cl-flet*
       ((is-justfile (s) (s-ends-with? "justfile" s t))
-       (any-justfile (d) (seq-find #'is-justfile (directory-files d))))
+       (any-justfile (d)
+         (let ((justfiles (seq-filter #'is-justfile (directory-files d))))
+           (or (seq-find (lambda (f) (string-equal f "justfile")) justfiles)
+               (car justfiles)))))
     (when-let ((location (locate-dominating-file dir #'any-justfile)))
       (expand-file-name (any-justfile location) location))))
 

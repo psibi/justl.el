@@ -1,5 +1,7 @@
 * Unreleased
 
+- Ability to go to justl buffers from the output buffers via the
+  keybinding ~j~.
 - Priority the file named "justfile" if there are multiple just files
   present in a directory. This becomes relevant specifically with
   modules which enables this kind of workflow.

@@ -390,7 +390,21 @@ default:
       (should-error (justl-exec-eat) :type 'user-error)))
   (kill-buffer (justl--buffer-name nil)))
 
-;; (ert "justl--**")
+(ert-deftest justl--go-to-justl-buffer-test ()
+  "Test that pressing `j' in the output buffer switches to the justl buffer."
+  (justl)
+  (let ((justl-buffer-name (justl--buffer-name nil)))
+    (with-current-buffer justl-buffer-name
+      (search-forward "plan")
+      (justl-exec-recipe)
+      (justl--wait-till-exit (justl--recipe-output-buffer "plan")))
+    (with-current-buffer (justl--recipe-output-buffer "plan")
+      (call-interactively 'justl--go-to-justl-buffer)
+      (should (equal (buffer-name) justl-buffer-name)))
+    (kill-buffer justl-buffer-name)
+    (kill-buffer (justl--recipe-output-buffer "plan"))))
 
 (provide 'justl-test)
+;; (ert "justl--**")
+
 ;;; justl-test.el ends here

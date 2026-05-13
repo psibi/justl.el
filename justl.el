@@ -264,7 +264,13 @@ controls if we are going to display the process status on mode line."
 (defvar-local justl--compile-command nil
   "Last shell command used to do a compilation; default for next compilation.")
 
-(defun justl--make-process (command &optional args)
+(defvar-local justl--parent-justl-buffer nil
+  "Buffer name of the justl buffer that launched this compilation.")
+
+(defvar-local justl--last-justl-buffer nil
+  "Buffer name of the most recent justl buffer.")
+
+(defun justl--make-process (command &optional args parent-buffer)
   "Start a spellcheck compilation process with COMMAND.
 
 ARGS is a plist that affects how the process is run.
@@ -272,7 +278,10 @@ ARGS is a plist that affects how the process is run.
 - `:buffer' name for process buffer
 - `:process' name for compilation process
 - `:mode' mode for process buffer
-- `:directory' set `default-directory'"
+- `:directory' set `default-directory'
+
+PARENT-BUFFER is the buffer name of the justl buffer that
+launched this compilation.  If nil, use `justl--last-justl-buffer'."
   (let* ((buf (get-buffer-create
                (or (plist-get args :buffer) justl--output-process-buffer)))
          (process-name (or (plist-get args :process) justl--compilation-process-name))
@@ -282,6 +291,7 @@ ARGS is a plist that affects how the process is run.
     (setq next-error-last-buffer buf)
     (justl-compilation-setup-buffer buf directory mode)
     (with-current-buffer buf
+      (setq-local justl--parent-justl-buffer (or parent-buffer justl--last-justl-buffer))
       (insert (format "Just target execution started at %s \n\n" (substring (current-time-string) 0 19)))
       (let* ((default-directory directory)
 	     (process (apply
@@ -301,8 +311,17 @@ ARGS is a plist that affects how the process is run.
     (suppress-keymap map t)
     (set-keymap-parent map compilation-mode-map)
     (define-key map [remap recompile] 'justl-recompile)
+    (define-key map (kbd "j") 'justl--go-to-justl-buffer)
     map)
   "Keymap for justl compilation log buffers.")
+
+(defun justl--go-to-justl-buffer ()
+  "Switch to the justl buffer that launched this compilation."
+  (interactive)
+  (if (and justl--parent-justl-buffer
+           (buffer-live-p (get-buffer justl--parent-justl-buffer)))
+      (switch-to-buffer justl--parent-justl-buffer)
+    (user-error "No justl buffer available")))
 
 (defun justl-set-new-working-dir (dir)
   "Set DIR as the new working directory.
@@ -333,7 +352,8 @@ This is usually used with no-cd recipe attribute."
                                                     :directory (if justl-justfile
                                                                    (f-dirname justl-justfile)
                                                                  default-directory)
-                                                    :mode 'justl-compile-mode)))
+                                                    :mode 'justl-compile-mode)
+                        justl--parent-justl-buffer))
 
 (defvar justl-mode-font-lock-keywords
   '(
@@ -379,7 +399,8 @@ ARGS is a list of arguments."
     (justl--make-process cmd (list :buffer buffer-name
                                    :process process-name
 				   :directory default-directory
-                                   :mode mode))))
+                                   :mode mode)
+                         (buffer-name))))
 
 (defun justl--exec-without-justfile (process-name args buffer-name)
   "Utility function to run commands in the proper setting.
@@ -831,14 +852,22 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
 					  :source (alist-get 'source (cdr x)))) .modules)))
 
 ;;;###autoload
-(defun justl ()
-  "Invoke the justl buffer."
+(defun justl (&optional justfile)
+  "Invoke the justl buffer.
+
+If JUSTFILE is provided, it is used instead of searching for one."
   (interactive)
-  (unless (justl--find-justfile default-directory)
-    (error "No justfile found"))
-  (justl--pop-to-buffer (justl--buffer-name nil))
-  (justl-mode)
-  (justl--refresh-buffer))
+  (let ((justfile-to-use (or justfile (justl--find-justfile default-directory))))
+    (unless justfile-to-use
+      (error "No justfile found"))
+    (let* ((dir (f-dirname justfile-to-use))
+           (buffer-name (format "*just [%s] %s*" justfile-to-use "")))
+      (justl--pop-to-buffer buffer-name)
+      (setq justl--last-justl-buffer (buffer-name))
+      (with-current-buffer buffer-name
+        (setq default-directory dir)
+        (justl-mode)
+        (justl--refresh-buffer)))))
 
 (define-derived-mode justl-mode tabulated-list-mode  "Justl"
   "Special mode for justl buffers."
@@ -929,9 +958,8 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
 (defun justl--module-open-justl ()
   "Open justl buffer for that specific module."
   (interactive)
-  (let* ((module (justl--get-module-under-cursor))
-	 (default-directory (f-dirname (just-module-source module))))
-    (justl)))
+  (let* ((module (justl--get-module-under-cursor)))
+    (justl (just-module-source module))))
 
 (provide 'justl)
 ;;; justl.el ends here

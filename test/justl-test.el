@@ -40,10 +40,10 @@
   (kill-buffer (justl--buffer-name nil)))
 
 (defun justl--wait-till-exit (buffer)
-   "Wait till the BUFFER has exited."
-   (let* ((proc (get-buffer-process buffer)))
-     (while (not (eq (process-status proc) 'exit))
-       (sit-for 0.2))))
+  "Wait till the BUFFER has exited."
+  (let* ((proc (get-buffer-process buffer)))
+    (while (not (eq (process-status proc) 'exit))
+      (sit-for 0.2))))
 
 (ert-deftest justl--execute-recipe ()
   (justl)
@@ -75,11 +75,11 @@
     (search-forward "fail")
     (justl-exec-recipe)
     (justl--wait-till-exit (justl--recipe-output-buffer "fail"))
-  (with-current-buffer (justl--recipe-output-buffer "fail")
-    (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
-      (should (s-contains? "exited abnormally" buf-string))))
-  (kill-buffer (justl--buffer-name nil))
-  (kill-buffer (justl--recipe-output-buffer "fail"))))
+    (with-current-buffer (justl--recipe-output-buffer "fail")
+      (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
+        (should (s-contains? "exited abnormally" buf-string))))
+    (kill-buffer (justl--buffer-name nil))
+    (kill-buffer (justl--recipe-output-buffer "fail"))))
 
 (ert-deftest justl--find-justfile-check ()
   (should (equal (f-filename (justl--find-justfile default-directory)) "justfile")))
@@ -189,7 +189,7 @@
 
 (ert-deftest justl--private-recipe-visible ()
   (let ((justl-include-private-recipes t))
-      (justl))
+    (justl))
   (with-current-buffer (justl--buffer-name nil)
     (let ((buf-string (buffer-substring-no-properties (point-min) (point-max))))
       (should (s-contains? "_private" buf-string)))))
@@ -389,6 +389,117 @@ default:
       ;; Should signal user-error when eat package is not found
       (should-error (justl-exec-eat) :type 'user-error)))
   (kill-buffer (justl--buffer-name nil)))
+
+;; Tests for ghostel functionality
+
+(ert-deftest justl--exec-ghostel-test ()
+  "Test that justl-exec-ghostel creates ghostel buffer and sends command."
+  (skip-unless (require 'ghostel nil t))
+  (justl)
+  (with-current-buffer (justl--buffer-name nil)
+    (search-forward "plan")
+    (let ((initial-buffers (buffer-list)))
+      ;; Call justl-exec-ghostel with no-send=t to avoid actually executing
+      (justl-exec-ghostel t)
+      ;; Check that a ghostel buffer was created
+      (let ((ghostel-buffers (seq-filter (lambda (buf)
+                                           (with-current-buffer buf
+                                             (string-match-p "justl - ghostel - plan" (buffer-name buf))))
+                                         (buffer-list))))
+        (should (> (length ghostel-buffers) 0))
+        ;; Clean up ghostel buffer
+        (when ghostel-buffers
+          (mapc 'kill-buffer ghostel-buffers)))))
+  (kill-buffer (justl--buffer-name nil)))
+
+(ert-deftest justl--exec-ghostel-buffer-naming-test ()
+  "Test that justl-exec-ghostel creates buffer with correct name."
+  (skip-unless (require 'ghostel nil t))
+  (justl)
+  (with-current-buffer (justl--buffer-name nil)
+    (search-forward "plan")
+    (justl-exec-ghostel t)
+    ;; Check buffer name format
+    (let ((ghostel-buffer (seq-find (lambda (buf)
+                                      (string-match-p "justl - ghostel - plan" (buffer-name buf)))
+                                    (buffer-list))))
+      (should ghostel-buffer)
+      (should (string-match-p "^justl - ghostel - plan" (buffer-name ghostel-buffer)))
+      (kill-buffer ghostel-buffer)))
+  (kill-buffer (justl--buffer-name nil)))
+
+(ert-deftest justl--no-exec-ghostel-test ()
+  "Test that justl-no-exec-ghostel works correctly."
+  (skip-unless (require 'ghostel nil t))
+  (justl)
+  (with-current-buffer (justl--buffer-name nil)
+    (search-forward "plan")
+    (justl-no-exec-ghostel)
+    ;; Should create ghostel buffer but not execute
+    (let ((ghostel-buffer (seq-find (lambda (buf)
+                                      (string-match-p "justl - ghostel - plan" (buffer-name buf)))
+                                    (buffer-list))))
+      (should ghostel-buffer)
+      (kill-buffer ghostel-buffer)))
+  (kill-buffer (justl--buffer-name nil)))
+
+(ert-deftest justl--exec-shell-ghostel-integration-test ()
+  "Test that justl-exec-shell works with ghosteql backend."
+  (skip-unless (require 'ghostel nil t))
+  (let ((original-shell justl-shell))
+    (unwind-protect
+        (progn
+          (setq justl-shell 'ghostel)
+          (justl)
+          (with-current-buffer (justl--buffer-name nil)
+            (search-forward "plan")
+            (justl-exec-shell t)
+            ;; Should create ghostel buffer when justl-shell is 'ghostel
+            (let ((ghostel-buffer (seq-find (lambda (buf)
+                                              (string-match-p "justl - ghostel - plan" (buffer-name buf)))
+                                            (buffer-list))))
+              (should ghostel-buffer)
+              (kill-buffer ghostel-buffer))))
+      ;; Restore original shell setting
+      (setq justl-shell original-shell))
+    (kill-buffer (justl--buffer-name nil))))
+
+(ert-deftest justl--no-exec-shell-ghostel-integration-test ()
+  "Test that justl-no-exec-shell works with ghostel backend."
+  (skip-unless (require 'ghostel nil t))
+  (let ((original-shell justl-shell))
+    (unwind-protect
+        (progn
+          (setq justl-shell 'ghostel)
+          (justl)
+          (with-current-buffer (justl--buffer-name nil)
+            (search-forward "plan")
+            (justl-no-exec-shell)
+            ;; Should create ghostel buffer when justl-shell is 'ghostel
+            (let ((ghostel-buffer (seq-find (lambda (buf)
+                                              (string-match-p "justl - ghostel - plan" (buffer-name buf)))
+                                            (buffer-list))))
+              (should ghostel-buffer)
+              (kill-buffer ghostel-buffer))))
+      ;; Restore original shell setting
+      (setq justl-shell original-shell))
+    (kill-buffer (justl--buffer-name nil))))
+
+(ert-deftest justl--exec-ghostel-error-handling-test ()
+  "Test that justl-exec-ghostel handles missing ghostel package gracefully."
+  ;; Mock ghostel package unavailability
+  (cl-letf (((symbol-function 'require)
+             (lambda (feature &optional filename noerror)
+               (if (eq feature 'ghostel)
+                   nil
+                 (funcall (symbol-function 'require) feature filename noerror)))))
+    (justl)
+    (with-current-buffer (justl--buffer-name nil)
+      (search-forward "plan")
+      ;; Should signal user-error when ghostel package is not found
+      (should-error (justl-exec-ghostel) :type 'user-error)))
+  (kill-buffer (justl--buffer-name nil)))
+
 
 (ert-deftest justl--go-to-justl-buffer-test ()
   "Test that pressing `j' in the output buffer switches to the justl buffer."

@@ -125,12 +125,14 @@ other cases, it's a known path."
 
 (defcustom justl-shell 'eshell
   "Shell to use when running recipes.
-Can be either Eshell, vterm, or eat.  Using vterm requires the vterm
-package to be installed.  Using eat requires the eat package to be installed."
+Can be either Eshell, vterm, eat, or ghostel.  Using vterm requires the vterm
+package to be installed.  Using eat requires the eat package to be installed.
+Using ghostel requires the ghostel package to be installed with its native module."
 
   :type '(choice (const eshell)
-                 (const vterm)
-                 (const eat))
+          (const vterm)
+          (const eat)
+          (const ghostel))
   :group 'justl)
 
 (defcustom justl-pop-to-buffer-on-display t
@@ -353,7 +355,7 @@ This is usually used with no-cd recipe attribute."
                                                                    (f-dirname justl-justfile)
                                                                  default-directory)
                                                     :mode 'justl-compile-mode)
-                        justl--parent-justl-buffer))
+                       justl--parent-justl-buffer))
 
 (defvar justl-mode-font-lock-keywords
   '(
@@ -441,17 +443,17 @@ Logs the command run."
 (defun justl--parse (justfile)
   "Extract info about JUSTFILE as parsed JSON."
   (let* ((base-args (append `(,justl-executable)
-                             (transient-args 'justl-help-popup)
-                             `(,(justl--justfile-argument justfile))))
+                            (transient-args 'justl-help-popup)
+                            `(,(justl--justfile-argument justfile))))
          (json (apply 'justl--exec-to-string-with-exit-code
                       (delete-dups (append base-args '("--unstable" "--dump" "--dump-format=json")))))
-        ;; Obtain the unsorted declaration order separately
-        (unsorted-recipes (s-split
-                           " "
-                           (s-trim-right
-                            (apply 'justl--exec-to-string-with-exit-code
-                                   (append base-args '("--summary" "--unsorted"))))
-                           t)))
+         ;; Obtain the unsorted declaration order separately
+         (unsorted-recipes (s-split
+                            " "
+                            (s-trim-right
+                             (apply 'justl--exec-to-string-with-exit-code
+                                    (append base-args '("--summary" "--unsorted"))))
+                            t)))
     (let ((parsed (json-parse-string json :null-object nil :false-object nil :array-type 'list :object-type 'alist)))
       (cl-flet ((unsorted-index (r)
                   (let-alist (cdr r)
@@ -479,9 +481,9 @@ Logs the command run."
 They are returned as objects, as per the JSON output of \"just --dump\"."
   (let-alist (justl--parse justfile)
     (let ((all-recipes (mapcar (lambda (x) (make-recipe :name (alist-get 'name x)
-				     :doc (alist-get 'doc x)
-				     :parameters (alist-get 'parameters x)
-				     :private (alist-get 'private x))) .recipes)))
+				                        :doc (alist-get 'doc x)
+				                        :parameters (alist-get 'parameters x)
+				                        :private (alist-get 'private x))) .recipes)))
       (if justl-include-private-recipes
 	  all-recipes
 	(seq-filter (lambda (recipe) (not (justl--recipe-private-p recipe))) all-recipes)))))
@@ -556,7 +558,7 @@ They are returned as objects, as per the JSON output of \"just --dump\"."
                                          (lambda (string pred action)
                                            (if (eq action 'metadata)
                                                '(metadata (annotation-function . justl-completion-annotation)
-                                                          (category . just-recipe))
+                                                 (category . just-recipe))
                                              (complete-with-action action recipe-names string pred)))
                                          nil t nil nil))
            (recipe (justl--find-recipes recipes recipe-name)))
@@ -696,6 +698,35 @@ is not executed."
   (interactive)
   (justl-exec-eat t))
 
+
+(defun justl-exec-ghostel (&optional no-send)
+  "Execute just recipe in ghostel.
+When NO-SEND is non-nil, the command is inserted ready for editing but
+is not executed."
+  (interactive)
+  (unless (require 'ghostel nil t)
+    (user-error "Package `ghostel' was not found!"))
+  (let* ((recipe (justl--get-recipe-under-cursor))
+         (ghostel-buffer-name (format "justl - ghostel - %s" (justl--recipe-name recipe)))
+         (default-directory (f-dirname justl-justfile)))
+    (ghostel t)
+
+    (let* ((recipe-name (justl--recipe-name recipe))
+           (recipe-args (justl--recipe-args recipe))
+           (transient-args (transient-args 'justl-help-popup))
+           (args-list (append (list "exec" justl-executable)
+                              transient-args
+                              (list recipe-name)
+                              (mapcar 'justl--arg-default recipe-args))))
+      (ghostel-send-string (string-join args-list " ")))
+    (unless no-send
+      (ghostel-send-key "return"))))
+
+(defun justl-no-exec-ghostel ()
+  "Open ghostel with the recipe but do not execute it."
+  (interactive)
+  (justl-exec-ghostel t))
+
 (defun justl-exec-shell (&optional no-send)
   "Execute just recipe in `justl-shell'.
 When NO-SEND is non-nil, the command is inserted ready for editing but
@@ -705,6 +736,7 @@ is not executed."
     ('eshell (justl-exec-eshell no-send))
     ('vterm (justl-exec-vterm no-send))
     ('eat (justl-exec-eat no-send))
+    ('ghostel (justl-exec-ghostel no-send))
     (_ (user-error "Invalid value for `justl-shell'"))))
 
 (defun justl-no-exec-shell ()
